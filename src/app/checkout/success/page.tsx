@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { Mail, ShieldCheck } from "lucide-react";
 import Logo from "@/components/Logo";
 import CheckoutShell from "@/components/checkout/CheckoutShell";
 import OrderSummary, { formatMoney } from "@/components/checkout/OrderSummary";
 import { AnimatedCheckmark, Confetti, FadeUp } from "@/components/checkout/Effects";
-import { getEvent, getTier } from "@/data/events";
-import { ORDER_COOKIE, unsign, type OrderCookie, type ReceiptPayload } from "@/lib/orders";
+import { getEvent, getTier, type TierId } from "@/data/events";
+import { verifyRef } from "@/lib/orders";
+import { amountCents, getOrderByRef, type OrderRow } from "@/lib/orders-db";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Booking confirmed | Easy Tickets", robots: { index: false } };
@@ -24,10 +24,31 @@ function bars(seed: string) {
 
 export default async function SuccessPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const r = typeof sp.r === "string" ? sp.r : undefined;
-  // Receipt is HMAC-signed by /api/dpo/return only after verifyToken returned 000 with matching amount.
-  const receipt = unsign<ReceiptPayload>("receipt", r);
-  const event = receipt ? getEvent(receipt.e) : undefined;
+  const ref = typeof sp.ref === "string" ? sp.ref : "";
+  const sig = typeof sp.sig === "string" ? sp.sig : "";
+  // The link is HMAC-signed by /api/dpo/return, so refs can't be enumerated.
+  // The order itself (and its paid status) is read from the database.
+  let order: OrderRow | null = null;
+  if (verifyRef("receipt", ref, sig)) {
+    try {
+      order = await getOrderByRef(ref);
+    } catch (e) {
+      console.error("[checkout/success] order lookup failed", ref, (e as Error).message);
+    }
+  }
+  const event = order ? getEvent(order.event_id) : undefined;
+  const receipt =
+    order && order.status === "paid"
+      ? {
+          ref: order.ref,
+          e: order.event_id,
+          i: order.items.map((it) => [it.tier, it.qty] as [TierId, number]),
+          a: amountCents(order),
+          ap: order.dpo_approval || order.dpo_trans_ref || undefined,
+          name: order.buyer_name,
+          email: order.buyer_email,
+        }
+      : null;
 
   if (!receipt || !event) {
     return (
@@ -43,9 +64,6 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     );
   }
 
-  const jar = await cookies();
-  const buyer = unsign<OrderCookie>("cookie", jar.get(ORDER_COOKIE)?.value);
-  const buyerMatches = buyer && buyer.ref === receipt.ref ? buyer : null;
   const tierNames = receipt.i.map(([t]) => getTier(event, t)?.name ?? t).join(" / ");
   const qty = receipt.i.reduce((s, [, q]) => s + q, 0);
 
@@ -109,11 +127,11 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
 
         <FadeUp delay={1.0} className="relative z-20 mt-8 space-y-6">
           <OrderSummary eventId={receipt.e} items={receipt.i} amountCents={receipt.a} />
-          {buyerMatches && (
+          {receipt.name && (
             <div className="flex items-center gap-3 bg-blue-50 p-4 rounded-xl border border-blue-100">
               <Mail className="w-5 h-5 text-blue-500 shrink-0" />
               <span className="text-sm text-blue-700 font-medium">
-                Booked by {buyerMatches.name} ({buyerMatches.email})
+                Booked by {receipt.name} ({receipt.email})
               </span>
             </div>
           )}

@@ -4,14 +4,29 @@ import { CircleSlash } from "lucide-react";
 import CheckoutShell from "@/components/checkout/CheckoutShell";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import { FadeUp } from "@/components/checkout/Effects";
-import { unsign, type OrderPayload } from "@/lib/orders";
+import type { TierId } from "@/data/events";
+import { verifyRef } from "@/lib/orders";
+import { amountCents, getOrderByRef } from "@/lib/orders-db";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Payment cancelled | Easy Tickets", robots: { index: false } };
 
 export default async function CancelledPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const order = unsign<OrderPayload>("order", typeof sp.o === "string" ? sp.o : undefined);
+  const ref = typeof sp.ref === "string" ? sp.ref : "";
+  const sig = typeof sp.sig === "string" ? sp.sig : "";
+  let order: { ref: string; e: number; i: [TierId, number][]; a: number } | null = null;
+  if (verifyRef("receipt", ref, sig)) {
+    const row = await getOrderByRef(ref).catch(() => null);
+    if (row) {
+      order = {
+        ref: row.ref,
+        e: row.event_id,
+        i: row.items.map((it) => [it.tier, it.qty] as [TierId, number]),
+        a: amountCents(row),
+      };
+    }
+  }
 
   return (
     <CheckoutShell>

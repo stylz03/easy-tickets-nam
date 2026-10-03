@@ -3,62 +3,19 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { getEvent, getTier, MAX_TICKETS_PER_ORDER, MAX_TICKETS_PER_TIER, type TierId } from "@/data/events";
 
 /**
- * Stateless order handling for the DPO sandbox test.
- *
- * There is NO database yet. Order details are carried in HMAC-SHA256 signed
- * tokens (in the DPO RedirectURL and an httpOnly cookie), signed with
- * ORDER_SIGNING_SECRET. Prices are always recomputed from src/data/events.ts.
- *
- * Before going live, replace this with a real orders table (Supabase/Postgres):
- * persisted status, idempotent "paid" transition, ticket issuing, reconciliation.
+ * Order pricing + ref helpers. Orders are persisted in Supabase (see
+ * src/lib/orders-db.ts); prices are always recomputed from src/data/events.ts.
  */
-
-export const ORDER_COOKIE = "et_order";
 
 export type OrderItem = { tier: TierId; qty: number };
 
-export interface OrderPayload {
-  v: 1;
-  /** Our order reference, sent to DPO as CompanyRef. */
-  ref: string;
-  /** Event id */
-  e: number;
-  /** Items: [tierId, qty] */
-  i: [TierId, number][];
-  /** Amount in cents */
-  a: number;
-  /** Currency */
-  c: string;
-  /** Issued at (ms) */
-  iat: number;
-  /** Expires at (ms) */
-  exp: number;
-}
-
-export interface OrderCookie {
-  ref: string;
-  /** DPO TransToken bound to this order */
-  tok: string;
-  /** Buyer display name + email (cookie only, never in URLs) */
-  name: string;
-  email: string;
-  exp: number;
-}
-
-export interface ReceiptPayload {
-  v: 1;
-  ref: string;
-  e: number;
-  i: [TierId, number][];
-  a: number;
-  c: string;
-  /** DPO approval / transaction ref (non-secret) */
-  ap?: string;
-  /** paid-at (ms) */
-  at: number;
-}
-
-type Purpose = "order" | "cookie" | "receipt";
+/**
+ * HMAC purposes. With the database as the source of truth, signing is only used
+ * for *capability links*: the ref in our DPO Redirect/Back URLs and in the
+ * success/cancelled page links is signed, so nobody can enumerate refs to view
+ * other people's orders or trigger verification for arbitrary orders.
+ */
+type Purpose = "return" | "receipt";
 
 function secret(): Buffer {
   const s = process.env.ORDER_SIGNING_SECRET;
@@ -68,43 +25,25 @@ function secret(): Buffer {
   return Buffer.from(s, "utf8");
 }
 
-function b64url(buf: Buffer | string): string {
-  return Buffer.from(buf).toString("base64url");
+/** HMAC-SHA256 signature (base64url) binding a purpose to an order ref. */
+export function signRef(purpose: Purpose, ref: string): string {
+  return createHmac("sha256", secret()).update(`${purpose}.${ref}`).digest("base64url");
 }
 
-function mac(purpose: Purpose, body: string): string {
-  return createHmac("sha256", secret()).update(`${purpose}.${body}`).digest("base64url");
-}
-
-export function sign(purpose: Purpose, payload: object): string {
-  const body = b64url(JSON.stringify(payload));
-  return `${body}.${mac(purpose, body)}`;
-}
-
-export function unsign<T extends object>(purpose: Purpose, token: string | null | undefined): T | null {
-  if (!token || typeof token !== "string" || token.length > 4096) return null;
-  const dot = token.lastIndexOf(".");
-  if (dot <= 0) return null;
-  const body = token.slice(0, dot);
-  const sig = token.slice(dot + 1);
+export function verifyRef(purpose: Purpose, ref: string | null | undefined, sig: string | null | undefined): boolean {
+  if (!ref || !sig || !REF_RE.test(ref) || sig.length > 128) return false;
   let expected: string;
   try {
-    expected = mac(purpose, body);
+    expected = signRef(purpose, ref);
   } catch {
-    return null;
+    return false;
   }
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  try {
-    const data = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as T;
-    const exp = (data as { exp?: unknown }).exp;
-    if (typeof exp === "number" && Date.now() > exp) return null;
-    return data;
-  } catch {
-    return null;
-  }
+  return a.length === b.length && timingSafeEqual(a, b);
 }
+
+export const REF_RE = /^ET-\d{8}-[0-9A-F]{8}$/;
 
 export function newOrderRef(): string {
   const d = new Date();

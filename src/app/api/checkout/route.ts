@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import { createToken, DpoConfigError, getDpoConfig, ptlMs } from "@/lib/dpo";
-import {
-  describeItems,
-  newOrderRef,
-  ORDER_COOKIE,
-  OrderValidationError,
-  priceOrder,
-  sign,
-  type OrderCookie,
-  type OrderPayload,
-} from "@/lib/orders";
+import { createToken, DpoConfigError, formatAmount, getDpoConfig } from "@/lib/dpo";
+import { describeItems, newOrderRef, OrderValidationError, priceOrder, signRef } from "@/lib/orders";
+import { attachDpoToken, eventStartIso, insertPendingOrder, transitionOrder } from "@/lib/orders-db";
+import { getTier } from "@/data/events";
 import { siteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -122,30 +115,44 @@ export async function POST(req: Request) {
     throw e;
   }
 
-  const now = Date.now();
+  // ---- 1. Persist a pending order (DB is the source of truth) ----------
   const ref = newOrderRef();
-  const order: OrderPayload = {
-    v: 1,
-    ref,
-    e: priced.event.id,
-    i: priced.items,
-    a: priced.amountCents,
-    c: cfg.currency,
-    iat: now,
-    // allow the DPO payment window plus a day of slack for late returns
-    exp: now + ptlMs(cfg) + 24 * 3_600_000,
-  };
-
-  let signedOrder: string;
+  let returnSig: string;
   try {
-    signedOrder = sign("order", order);
+    returnSig = signRef("return", ref);
   } catch {
     return fail(503, "Payments are not configured");
   }
 
+  let order;
+  try {
+    order = await insertPendingOrder({
+      ref,
+      event_id: priced.event.id,
+      event_name: priced.event.title,
+      event_date: eventStartIso(priced.event.startsAt),
+      items: priced.items.map(([tier, qty]) => ({
+        tier,
+        name: getTier(priced.event, tier)!.name,
+        qty,
+        unit_price: getTier(priced.event, tier)!.price,
+      })),
+      amount: formatAmount(priced.amountCents),
+      currency: cfg.currency,
+      buyer_name: name,
+      buyer_email: email,
+      buyer_phone: phoneRaw,
+    });
+  } catch (e) {
+    console.error("[checkout] order insert failed", ref, (e as Error).message);
+    return fail(503, "Could not create your order. Please try again.");
+  }
+
+  // ---- 2. createToken with DPO -----------------------------------------
   const base = siteUrl(req);
-  const redirectUrl = `${base}/api/dpo/return?o=${encodeURIComponent(signedOrder)}`;
-  const backUrl = `${base}/api/dpo/return?back=1&o=${encodeURIComponent(signedOrder)}`;
+  const q = `ref=${encodeURIComponent(ref)}&sig=${encodeURIComponent(returnSig)}`;
+  const redirectUrl = `${base}/api/dpo/return?${q}`;
+  const backUrl = `${base}/api/dpo/return?back=1&${q}`;
 
   const svcDescription = serviceDescription(
     priced.event.title,
@@ -168,43 +175,40 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     console.error("[checkout] createToken request failed", ref, (e as Error).message);
+    await transitionOrder(order.id, ["pending"], { status: "failed", dpo_result_code: "create_error" }).catch(() => null);
     return fail(502, "Could not reach the payment provider. Please try again.");
   }
 
   if (!token.ok || !token.transToken || !token.paymentUrl) {
     console.error("[checkout] createToken rejected", ref, token.result, token.resultExplanation);
+    await transitionOrder(order.id, ["pending"], {
+      status: "failed",
+      dpo_result_code: `create_${token.result || "unknown"}`,
+    }).catch(() => null);
     return fail(502, `Payment provider error (${token.result || "unknown"})`);
   }
 
-  const cookie: OrderCookie = {
-    ref,
-    tok: token.transToken,
-    name,
-    email,
-    exp: order.exp,
-  };
+  // ---- 3. Store the DPO token on the order ------------------------------
+  try {
+    await attachDpoToken(order.id, token.transToken, token.transRef);
+  } catch (e) {
+    console.error("[checkout] attach token failed", ref, (e as Error).message);
+    return fail(503, "Could not save your order. Please try again.");
+  }
 
-  const res = isForm
+  return isForm
     ? NextResponse.redirect(token.paymentUrl, 303)
     : NextResponse.json(
         {
-            ok: true,
-            ref,
-            url: token.paymentUrl,
-            transToken: token.transToken,
-            amount: priced.amountCents / 100,
-            currency: cfg.currency,
-            serviceDescription: svcDescription,
-            serviceDateUtc: svcDate,
-          },
+          ok: true,
+          ref,
+          url: token.paymentUrl,
+          transToken: token.transToken,
+          amount: priced.amountCents / 100,
+          currency: cfg.currency,
+          serviceDescription: svcDescription,
+          serviceDateUtc: svcDate,
+        },
         { headers: { "Cache-Control": "no-store" } },
       );
-  res.cookies.set(ORDER_COOKIE, sign("cookie", cookie), {
-    httpOnly: true,
-    secure: base.startsWith("https://"),
-    sameSite: "lax",
-    path: "/",
-    maxAge: Math.floor((order.exp - now) / 1000),
-  });
-  return res;
 }
