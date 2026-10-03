@@ -16,6 +16,8 @@ export interface TicketTier {
   name: string;
   /** Price per ticket in NAD (whole dollars). */
   price: number;
+  capacity?: number;
+  available?: number;
   perks: string[];
 }
 
@@ -27,6 +29,7 @@ export interface EventItem {
   fullDate: string;
   /** Event start, local Namibia time (CAT, UTC+2), sent to DPO as ServiceDate ("YYYY/MM/DD HH:MM"). */
   startsAt: string;
+  endsAt?: string;
   /** "From" price shown on the card = Standard tier price (NAD). */
   price: number;
   img: string;

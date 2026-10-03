@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
+import { AccountProvider } from "@/components/site/AccountProvider";
 
-const inter = Inter({
+const inter = localFont({
   variable: "--font-inter",
-  subsets: ["latin"],
+  src: "../../public/fonts/inter-latin.woff2", weight: "100 900", display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Easy Tickets",
-  description: "Easy Tickets Dashboard MVP",
+  title: { default: "Easy Tickets | Events in Namibia", template: "%s | Easy Tickets" },
+  description: "Find music, festivals, culture, food and sport in Namibia. Book your next event with Easy Tickets.",
 };
 
 export default function RootLayout({
@@ -22,8 +23,8 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} antialiased`}
     >
-      <body className="bg-slate-900 text-slate-50 min-h-screen">
-        {children}
+      <body>
+        <AccountProvider>{children}</AccountProvider>
       </body>
     </html>
   );

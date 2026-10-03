@@ -1,0 +1,7 @@
+.env*
+!.env.example
+.preview-lint.json
+.git
+.next
+node_modules
+tests

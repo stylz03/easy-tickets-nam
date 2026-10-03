@@ -28,7 +28,7 @@ export default async function FailedPage({ searchParams }: { searchParams: Promi
             <div className="font-mono font-semibold text-slate-800">{ref}</div>
           </div>
         )}
-        <p className="text-xs text-slate-400 mb-8">No tickets were issued. If you were charged, contact support with your order reference.</p>
+        <p className="text-xs text-slate-400 mb-8">Tickets appear after payment is confirmed. If you were charged, check My tickets or contact support with your order reference.</p>
         <Link
           href="/design/1#events"
           className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all text-lg"

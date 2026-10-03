@@ -11,6 +11,7 @@ let client: SupabaseClient | null = null;
 export class SupabaseConfigError extends Error {}
 
 export function supabaseAdmin(): SupabaseClient {
+  if (process.env.EASY_TICKETS_PREVIEW === "true") throw new SupabaseConfigError("Live services are disabled in design preview.");
   if (client) return client;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

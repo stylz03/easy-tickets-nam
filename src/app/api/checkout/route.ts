@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createToken, DpoConfigError, formatAmount, getDpoConfig } from "@/lib/dpo";
-import { describeItems, newOrderRef, OrderValidationError, priceOrder, signRef } from "@/lib/orders";
+import { newOrderRef, OrderValidationError, priceOrder, signRef } from "@/lib/orders";
 import { attachDpoToken, eventStartIso, insertPendingOrder, transitionOrder } from "@/lib/orders-db";
 import { getTier } from "@/data/events";
 import { siteUrl } from "@/lib/site-url";
+import { catalogue } from "@/lib/catalogue";
+import { currentUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -77,6 +79,7 @@ function fail(status: number, error: string) {
 }
 
 export async function POST(req: Request) {
+  if (req.headers.get("origin") !== new URL(req.url).origin) return fail(403, "Invalid request origin");
   let parsed: { body: CheckoutBody; isForm: boolean };
   try {
     parsed = await readBody(req);
@@ -101,10 +104,14 @@ export async function POST(req: Request) {
   // ---- Price server-side from the catalogue ---------------------------
   let priced: ReturnType<typeof priceOrder>;
   try {
-    priced = priceOrder(body.eventId, body.items);
+    const available = await catalogue();
+    if (available.preview) return fail(503, "Bookings are not connected yet. Please check back shortly.");
+    priced = priceOrder(body.eventId, body.items, available.events);
+    const start = eventStartIso(priced.event.startsAt);
+    if (!start || Date.parse(start) <= Date.now()) return fail(400, "This event is no longer available to book.");
   } catch (e) {
     if (e instanceof OrderValidationError) return fail(400, e.message);
-    throw e;
+    return fail(503, "The event catalogue is unavailable. Please try again.");
   }
 
   let cfg: ReturnType<typeof getDpoConfig>;
@@ -126,7 +133,9 @@ export async function POST(req: Request) {
 
   let order;
   try {
+    const user = await currentUser();
     order = await insertPendingOrder({
+      user_id: user?.id ?? null,
       ref,
       event_id: priced.event.id,
       event_name: priced.event.title,
@@ -157,7 +166,7 @@ export async function POST(req: Request) {
   const svcDescription = serviceDescription(
     priced.event.title,
     priced.event.fullDate,
-    describeItems(priced.event.id, priced.items),
+    priced.items.map(([tier, qty]) => `${qty}x ${getTier(priced.event, tier)!.name}`).join(", "),
   );
   const svcDate = dpoServiceDate(priced.event.startsAt);
 

@@ -1,0 +1,4 @@
+import { Search, MapPin, ArrowRight } from "lucide-react";
+export default function SearchForm({ query = "", city = "" }: { query?: string; city?: string }) {
+  return <form action="/events" className="event-search" role="search"><label><Search size={20} /><span><span className="field-caption">What are you looking for?</span><input type="search" name="q" aria-label="Search events, artists or venues" placeholder="Event, artist or venue" defaultValue={query} /></span></label><label className="search-city"><MapPin size={19} /><span><span className="field-caption">Where?</span><select name="city" defaultValue={city} aria-label="City"><option value="">Anywhere in Namibia</option>{["Windhoek", "Swakopmund", "Walvis Bay", "Etosha"].map(c => <option key={c}>{c}</option>)}</select></span></label><button className="button primary" type="submit">Find events <ArrowRight size={18} /></button></form>;
+}

@@ -1,6 +1,6 @@
 /** Buyer-facing messages for /checkout/failed?reason=… (display only). */
 export const VERIFY_CODES_PUBLIC: Record<string, string> = {
-  not_paid: "The payment was not completed. You have not been charged.",
+  not_paid: "Your payment has not been confirmed yet. Check My tickets before starting another booking. If a charge appears, contact support with your order reference.",
   dpo_901: "Your card issuer declined the transaction.",
   dpo_903: "The payment time limit expired. Please start a new booking.",
   dpo_902: "The payment details did not match. Please try again.",

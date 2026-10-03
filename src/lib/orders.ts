@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { getEvent, getTier, MAX_TICKETS_PER_ORDER, MAX_TICKETS_PER_TIER, type TierId } from "@/data/events";
+import { events, getEvent, getTier, MAX_TICKETS_PER_ORDER, MAX_TICKETS_PER_TIER, type EventItem, type TierId } from "@/data/events";
 
 /**
  * Order pricing + ref helpers. Orders are persisted in Supabase (see
@@ -54,9 +54,9 @@ export function newOrderRef(): string {
 export class OrderValidationError extends Error {}
 
 /** Validate requested items and compute the authoritative total (cents). */
-export function priceOrder(eventId: unknown, rawItems: unknown) {
-  const id = typeof eventId === "number" ? eventId : Number.parseInt(String(eventId), 10);
-  const event = Number.isInteger(id) ? getEvent(id) : undefined;
+export function priceOrder(eventId: unknown, rawItems: unknown, catalogueEvents: EventItem[] = events) {
+  const id = typeof eventId === "number" ? eventId : Number(String(eventId));
+  const event = Number.isSafeInteger(id) ? catalogueEvents.find(e => e.id === id) : undefined;
   if (!event) throw new OrderValidationError("Unknown event");
   if (!Array.isArray(rawItems) || rawItems.length === 0 || rawItems.length > 10) {
     throw new OrderValidationError("Select at least one ticket");

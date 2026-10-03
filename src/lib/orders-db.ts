@@ -13,6 +13,7 @@ export interface OrderItemRow {
 
 export interface OrderRow {
   id: string;
+  user_id: string | null;
   ref: string;
   event_id: number;
   event_name: string;
@@ -49,13 +50,11 @@ export function amountCents(row: Pick<OrderRow, "amount">): number {
 export async function insertPendingOrder(
   row: Pick<OrderRow, "ref" | "event_id" | "event_name" | "event_date" | "items" | "currency" | "buyer_name" | "buyer_email" | "buyer_phone"> & {
     amount: string;
+    user_id?: string | null;
   },
 ): Promise<OrderRow> {
   const { data, error } = await supabaseAdmin()
-    .from(TABLE)
-    .insert({ ...row, status: "pending" })
-    .select()
-    .single();
+    .rpc("reserve_website_order", { p_order: row }).single();
   if (error) throw new Error(`insert order failed: ${error.code} ${error.message}`);
   return data as OrderRow;
 }

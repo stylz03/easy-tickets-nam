@@ -37,7 +37,7 @@ export default async function CancelledPage({ searchParams }: { searchParams: Pr
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Payment Cancelled</h1>
           <p className="text-slate-500 text-sm mb-8">
-            You left the payment page before paying. You have not been charged.
+            DPO reported that this payment was cancelled. If a charge appears, contact support with your order reference.
             {order && (
               <>
                 {" "}Order <span className="font-mono font-semibold text-slate-800">{order.ref}</span> was not completed.
@@ -51,7 +51,7 @@ export default async function CancelledPage({ searchParams }: { searchParams: Pr
           </div>
         )}
         <Link
-          href={order ? `/design/1?book=${order.e}#events` : "/design/1#events"}
+          href={order ? `/events/${order.e}` : "/design/1#events"}
           className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all text-lg"
         >
           Try Again
