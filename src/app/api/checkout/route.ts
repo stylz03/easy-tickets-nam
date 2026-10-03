@@ -21,6 +21,34 @@ function clean(v: unknown, max: number): string {
   return typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) : "";
 }
 
+/**
+ * DPO ServiceDescription: real event name + ticket summary + date, e.g.
+ * "Desert Dune Music Fest - 2x Standard, 1x VIP - November 14, 2026".
+ * Kept plain ASCII ("&" -> "and", en dash -> "-") so DPO renders it cleanly.
+ */
+function serviceDescription(title: string, date: string, tickets: string): string {
+  return `${title} - ${tickets} - ${date}`
+    .replace(/&/g, "and")
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^\x20-\x7E]/g, "")
+    .slice(0, 200);
+}
+
+/**
+ * DPO ServiceDate ("YYYY/MM/DD HH:MM"). DPO's API works in UTC (its own
+ * timestamps are UTC) and the hosted page shows the date shifted to local time,
+ * so a Namibia-local start of 10:00 appeared as 12:00 PM. Convert the event's
+ * local start (CAT, UTC+2, no DST) to UTC before sending.
+ */
+const EVENT_TZ_OFFSET_HOURS = 2;
+function dpoServiceDate(localStart: string): string {
+  const m = localStart.match(/^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})$/);
+  if (!m) return localStart;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - EVENT_TZ_OFFSET_HOURS, +m[5]));
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}/${p(d.getUTCMonth() + 1)}/${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+
 interface CheckoutBody {
   eventId?: unknown;
   items?: unknown;
@@ -119,6 +147,13 @@ export async function POST(req: Request) {
   const redirectUrl = `${base}/api/dpo/return?o=${encodeURIComponent(signedOrder)}`;
   const backUrl = `${base}/api/dpo/return?back=1&o=${encodeURIComponent(signedOrder)}`;
 
+  const svcDescription = serviceDescription(
+    priced.event.title,
+    priced.event.fullDate,
+    describeItems(priced.event.id, priced.items),
+  );
+  const svcDate = dpoServiceDate(priced.event.startsAt);
+
   let token: Awaited<ReturnType<typeof createToken>>;
   try {
     token = await createToken({
@@ -127,8 +162,8 @@ export async function POST(req: Request) {
       companyRef: ref,
       redirectUrl,
       backUrl,
-      serviceDescription: `${priced.event.title} - ${describeItems(priced.event.id, priced.items)}`.slice(0, 200),
-      serviceDate: priced.event.startsAt,
+      serviceDescription: svcDescription,
+      serviceDate: svcDate,
       customer: { firstName, lastName, email, phone: phoneDigits },
     });
   } catch (e) {
@@ -152,7 +187,16 @@ export async function POST(req: Request) {
   const res = isForm
     ? NextResponse.redirect(token.paymentUrl, 303)
     : NextResponse.json(
-        { ok: true, ref, url: token.paymentUrl, transToken: token.transToken, amount: priced.amountCents / 100, currency: cfg.currency },
+        {
+            ok: true,
+            ref,
+            url: token.paymentUrl,
+            transToken: token.transToken,
+            amount: priced.amountCents / 100,
+            currency: cfg.currency,
+            serviceDescription: svcDescription,
+            serviceDateUtc: svcDate,
+          },
         { headers: { "Cache-Control": "no-store" } },
       );
   res.cookies.set(ORDER_COOKIE, sign("cookie", cookie), {

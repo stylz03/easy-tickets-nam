@@ -25,7 +25,7 @@ export interface EventItem {
   /** Short badge, e.g. "JUL 18" */
   date: string;
   fullDate: string;
-  /** Event start, local Namibia time, used for DPO ServiceDate (YYYY/MM/DD HH:MM). */
+  /** Event start, local Namibia time (CAT, UTC+2), sent to DPO as ServiceDate ("YYYY/MM/DD HH:MM"). */
   startsAt: string;
   /** "From" price shown on the card = Standard tier price (NAD). */
   price: number;
@@ -71,9 +71,9 @@ const baseEvents: BaseEvent[] = [
   {
     id: 1,
     title: "Windhoek Cultural Festival",
-    date: "JUL 18",
-    fullDate: "July 18, 2026",
-    startsAt: "2026/07/18 14:00",
+    date: "OCT 17",
+    fullDate: "October 17, 2026",
+    startsAt: "2026/10/17 14:00",
     price: 150,
     img: "/images/design1/evt1.png",
     location: "Independence Stadium, Windhoek",
@@ -85,9 +85,9 @@ const baseEvents: BaseEvent[] = [
   {
     id: 2,
     title: "Desert Dune Music Fest",
-    date: "JUL 25",
-    fullDate: "July 25, 2026",
-    startsAt: "2026/07/25 16:00",
+    date: "NOV 14",
+    fullDate: "November 14, 2026",
+    startsAt: "2026/11/14 16:00",
     price: 250,
     img: "/images/design1/evt2.png",
     location: "Swakopmund Dunes",
@@ -99,9 +99,9 @@ const baseEvents: BaseEvent[] = [
   {
     id: 3,
     title: "Namibian Food & Wine Expo",
-    date: "AUG 02",
-    fullDate: "August 2, 2026",
-    startsAt: "2026/08/02 10:00",
+    date: "DEC 06",
+    fullDate: "December 6, 2026",
+    startsAt: "2026/12/06 10:00",
     price: 100,
     img: "/images/design1/evt3.png",
     location: "Zoo Park, Windhoek",
@@ -113,9 +113,9 @@ const baseEvents: BaseEvent[] = [
   {
     id: 4,
     title: "Etosha Trail Marathon",
-    date: "AUG 10",
-    fullDate: "August 10, 2026",
-    startsAt: "2026/08/10 06:00",
+    date: "JAN 17",
+    fullDate: "January 17, 2027",
+    startsAt: "2027/01/17 06:00",
     price: 200,
     img: "/images/design1/evt4.png",
     location: "Etosha National Park",
@@ -127,9 +127,9 @@ const baseEvents: BaseEvent[] = [
   {
     id: 5,
     title: "Coastal Jazz Weekend",
-    date: "AUG 22",
-    fullDate: "August 22–23, 2026",
-    startsAt: "2026/08/22 17:00",
+    date: "FEB 13",
+    fullDate: "February 13–14, 2027",
+    startsAt: "2027/02/13 17:00",
     price: 180,
     img: "/images/design1/evt1.png",
     location: "Walvis Bay Waterfront",
@@ -141,9 +141,9 @@ const baseEvents: BaseEvent[] = [
   {
     id: 6,
     title: "Windhoek Comedy Night",
-    date: "SEP 05",
-    fullDate: "September 5, 2026",
-    startsAt: "2026/09/05 19:00",
+    date: "FEB 26",
+    fullDate: "February 26, 2027",
+    startsAt: "2027/02/26 19:00",
     price: 120,
     img: "/images/design1/evt2.png",
     location: "National Theatre, Windhoek",
