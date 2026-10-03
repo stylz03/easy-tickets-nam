@@ -1,0 +1,166 @@
+import { NextResponse } from "next/server";
+import { createToken, DpoConfigError, getDpoConfig, ptlMs } from "@/lib/dpo";
+import {
+  describeItems,
+  newOrderRef,
+  ORDER_COOKIE,
+  OrderValidationError,
+  priceOrder,
+  sign,
+  type OrderCookie,
+  type OrderPayload,
+} from "@/lib/orders";
+import { siteUrl } from "@/lib/site-url";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']+\.[^\s@<>"']{2,}$/;
+
+function clean(v: unknown, max: number): string {
+  return typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) : "";
+}
+
+interface CheckoutBody {
+  eventId?: unknown;
+  items?: unknown;
+  name?: unknown;
+  email?: unknown;
+  phone?: unknown;
+}
+
+async function readBody(req: Request): Promise<{ body: CheckoutBody; isForm: boolean }> {
+  const ct = req.headers.get("content-type") ?? "";
+  if (ct.includes("application/json")) {
+    return { body: (await req.json()) as CheckoutBody, isForm: false };
+  }
+  const fd = await req.formData();
+  const items = ["standard", "premium", "vip"].map((tier) => ({
+    tier,
+    qty: Number.parseInt(String(fd.get(`qty_${tier}`) ?? "0"), 10) || 0,
+  }));
+  return {
+    body: {
+      eventId: fd.get("eventId"),
+      items,
+      name: fd.get("name"),
+      email: fd.get("email"),
+      phone: fd.get("phone"),
+    },
+    isForm: true,
+  };
+}
+
+function fail(status: number, error: string) {
+  return NextResponse.json({ ok: false, error }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
+export async function POST(req: Request) {
+  let parsed: { body: CheckoutBody; isForm: boolean };
+  try {
+    parsed = await readBody(req);
+  } catch {
+    return fail(400, "Invalid request body");
+  }
+  const { body, isForm } = parsed;
+
+  // ---- Validate buyer -------------------------------------------------
+  const name = clean(body.name, 100);
+  const email = clean(body.email, 254).toLowerCase();
+  const phoneRaw = clean(body.phone, 30);
+  const phoneDigits = phoneRaw.replace(/[^\d]/g, "");
+  if (name.length < 2) return fail(400, "Please enter your full name");
+  if (!EMAIL_RE.test(email)) return fail(400, "Please enter a valid email address");
+  if (phoneDigits.length < 7 || phoneDigits.length > 15 || !/^\+?[\d\s()-]+$/.test(phoneRaw)) {
+    return fail(400, "Please enter a valid phone number");
+  }
+  const [firstName, ...rest] = name.split(" ");
+  const lastName = rest.join(" ") || firstName;
+
+  // ---- Price server-side from the catalogue ---------------------------
+  let priced: ReturnType<typeof priceOrder>;
+  try {
+    priced = priceOrder(body.eventId, body.items);
+  } catch (e) {
+    if (e instanceof OrderValidationError) return fail(400, e.message);
+    throw e;
+  }
+
+  let cfg: ReturnType<typeof getDpoConfig>;
+  try {
+    cfg = getDpoConfig();
+  } catch (e) {
+    if (e instanceof DpoConfigError) return fail(503, "Payments are not configured");
+    throw e;
+  }
+
+  const now = Date.now();
+  const ref = newOrderRef();
+  const order: OrderPayload = {
+    v: 1,
+    ref,
+    e: priced.event.id,
+    i: priced.items,
+    a: priced.amountCents,
+    c: cfg.currency,
+    iat: now,
+    // allow the DPO payment window plus a day of slack for late returns
+    exp: now + ptlMs(cfg) + 24 * 3_600_000,
+  };
+
+  let signedOrder: string;
+  try {
+    signedOrder = sign("order", order);
+  } catch {
+    return fail(503, "Payments are not configured");
+  }
+
+  const base = siteUrl(req);
+  const redirectUrl = `${base}/api/dpo/return?o=${encodeURIComponent(signedOrder)}`;
+  const backUrl = `${base}/api/dpo/return?back=1&o=${encodeURIComponent(signedOrder)}`;
+
+  let token: Awaited<ReturnType<typeof createToken>>;
+  try {
+    token = await createToken({
+      amountCents: priced.amountCents,
+      currency: cfg.currency,
+      companyRef: ref,
+      redirectUrl,
+      backUrl,
+      serviceDescription: `${priced.event.title} - ${describeItems(priced.event.id, priced.items)}`.slice(0, 200),
+      serviceDate: priced.event.startsAt,
+      customer: { firstName, lastName, email, phone: phoneDigits },
+    });
+  } catch (e) {
+    console.error("[checkout] createToken request failed", ref, (e as Error).message);
+    return fail(502, "Could not reach the payment provider. Please try again.");
+  }
+
+  if (!token.ok || !token.transToken || !token.paymentUrl) {
+    console.error("[checkout] createToken rejected", ref, token.result, token.resultExplanation);
+    return fail(502, `Payment provider error (${token.result || "unknown"})`);
+  }
+
+  const cookie: OrderCookie = {
+    ref,
+    tok: token.transToken,
+    name,
+    email,
+    exp: order.exp,
+  };
+
+  const res = isForm
+    ? NextResponse.redirect(token.paymentUrl, 303)
+    : NextResponse.json(
+        { ok: true, ref, url: token.paymentUrl, transToken: token.transToken, amount: priced.amountCents / 100, currency: cfg.currency },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+  res.cookies.set(ORDER_COOKIE, sign("cookie", cookie), {
+    httpOnly: true,
+    secure: base.startsWith("https://"),
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor((order.exp - now) / 1000),
+  });
+  return res;
+}

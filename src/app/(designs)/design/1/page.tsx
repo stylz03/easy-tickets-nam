@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Logo from "@/components/Logo";
+import { events } from "@/data/events";
 import {
   motion,
   AnimatePresence,
@@ -37,106 +38,13 @@ import {
   Trophy,
   PartyPopper,
   Lock,
+  Phone,
+  Loader2,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  DATA                                                               */
 /* ------------------------------------------------------------------ */
-
-const events = [
-  {
-    id: 1,
-    title: "Windhoek Cultural Festival",
-    date: "JUL 18",
-    fullDate: "July 18, 2026",
-    price: 150,
-    img: "/images/design1/evt1.png",
-    location: "Independence Stadium, Windhoek",
-    time: "14:00 – 22:00",
-    category: "Culture",
-    description:
-      "Immerse yourself in an unforgettable celebration of Namibian heritage. Featuring live performances from over 30 local artists, traditional dance showcases, artisan craft markets, and a culinary journey through the flavours of every region. Perfect for families, culture enthusiasts, and anyone looking to experience the heart of Namibia.",
-  },
-  {
-    id: 2,
-    title: "Desert Dune Music Fest",
-    date: "JUL 25",
-    fullDate: "July 25, 2026",
-    price: 250,
-    img: "/images/design1/evt2.png",
-    location: "Swakopmund Dunes",
-    time: "16:00 – 02:00",
-    category: "Music",
-    description:
-      "Dance under the stars at Namibia's most iconic electronic music festival set against the breathtaking desert dunes. Three stages, 20+ DJs, immersive art installations, and gourmet food trucks make this a once-in-a-lifetime experience for music lovers.",
-  },
-  {
-    id: 3,
-    title: "Namibian Food & Wine Expo",
-    date: "AUG 02",
-    fullDate: "August 2, 2026",
-    price: 100,
-    img: "/images/design1/evt3.png",
-    location: "Zoo Park, Windhoek",
-    time: "10:00 – 18:00",
-    category: "Food",
-    description:
-      "A gastronomic adventure showcasing the finest Namibian cuisine and boutique wines. Enjoy live cooking demonstrations from award-winning chefs, wine tastings from local vineyards, artisan cheese and charcuterie stalls, and hands-on cooking workshops.",
-  },
-  {
-    id: 4,
-    title: "Etosha Trail Marathon",
-    date: "AUG 10",
-    fullDate: "August 10, 2026",
-    price: 200,
-    img: "/images/design1/evt4.png",
-    location: "Etosha National Park",
-    time: "06:00 – 14:00",
-    category: "Sport",
-    description:
-      "Run through the wild heart of Africa on this unique trail marathon winding through Etosha's iconic landscapes. Choose from 10K, 21K, or full marathon distances. Post-race celebrations include a braai, live music, and awards ceremony.",
-  },
-  {
-    id: 5,
-    title: "Coastal Jazz Weekend",
-    date: "AUG 22",
-    fullDate: "August 22–23, 2026",
-    price: 180,
-    img: "/images/design1/evt1.png",
-    location: "Walvis Bay Waterfront",
-    time: "17:00 – 23:00",
-    category: "Music",
-    description:
-      "Enjoy world-class jazz performances right on the Walvis Bay waterfront. Over two magical evenings, experience smooth jazz, Afro-fusion, and soul from both Namibian and international artists while savouring seafood and sunset cocktails.",
-  },
-  {
-    id: 6,
-    title: "Windhoek Comedy Night",
-    date: "SEP 05",
-    fullDate: "September 5, 2026",
-    price: 120,
-    img: "/images/design1/evt2.png",
-    location: "National Theatre, Windhoek",
-    time: "19:00 – 22:30",
-    category: "Entertainment",
-    description:
-      "Get ready for a night of non-stop laughter featuring Namibia's sharpest comedians and two international headliners. With a full bar, delicious finger food, and a late-night after-party, this is the ultimate comedy experience.",
-  },
-];
-
-const tiers = [
-  { name: "Standard", price: 150, perks: ["General admission", "Access to main stage"] },
-  {
-    name: "Premium",
-    price: 350,
-    perks: ["Priority entry", "Reserved seating", "1 complimentary drink"],
-  },
-  {
-    name: "VIP",
-    price: 600,
-    perks: ["Fast-track entry", "VIP lounge access", "Open bar", "Meet & greet"],
-  },
-];
 
 const testimonials = [
   {
@@ -176,101 +84,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  CONFETTI COMPONENT                                                 */
-/* ------------------------------------------------------------------ */
-
-function Confetti() {
-  const colors = [
-    "#5DBE47",
-    "#FF4D4D",
-    "#FFD100",
-    "#33A1FD",
-    "#A855F7",
-    "#F472B6",
-    "#34D399",
-    "#FBBF24",
-  ];
-  const pieces = Array.from({ length: 60 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    color: colors[i % colors.length],
-    delay: Math.random() * 0.5,
-    size: Math.random() * 8 + 4,
-    rotation: Math.random() * 360,
-    drift: (Math.random() - 0.5) * 120,
-  }));
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
-      {pieces.map((p) => (
-        <motion.div
-          key={p.id}
-          initial={{ y: -20, x: `${p.x}%`, opacity: 1, rotate: 0, scale: 1 }}
-          animate={{
-            y: "110%",
-            x: `${p.x + p.drift / 5}%`,
-            opacity: [1, 1, 0],
-            rotate: p.rotation + 720,
-            scale: [1, 1, 0.5],
-          }}
-          transition={{
-            duration: 2.5 + Math.random(),
-            delay: p.delay,
-            ease: "easeIn",
-          }}
-          className="absolute rounded-sm"
-          style={{
-            width: p.size,
-            height: p.size * (Math.random() > 0.5 ? 1 : 0.5),
-            backgroundColor: p.color,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  ANIMATED CHECKMARK                                                 */
-/* ------------------------------------------------------------------ */
-
-function AnimatedCheckmark() {
-  return (
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-      className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6"
-    >
-      <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
-        <motion.circle
-          cx="26"
-          cy="26"
-          r="24"
-          stroke="#10b981"
-          strokeWidth="3"
-          fill="none"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        />
-        <motion.path
-          d="M15 27L22 34L37 19"
-          stroke="#10b981"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.4, delay: 0.7 }}
-        />
-      </svg>
-    </motion.div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  MAIN COMPONENT                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -280,9 +93,11 @@ export default function Design1() {
   const [bookingStep, setBookingStep] = useState(1);
   const [selectedTier, setSelectedTier] = useState(0);
   const [quantities, setQuantities] = useState([1, 0, 0]);
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [navScrolled, setNavScrolled] = useState(false);
 
   /* REFS */
@@ -315,15 +130,15 @@ export default function Design1() {
     setBookingStep(1);
     setSelectedTier(0);
     setQuantities([1, 0, 0]);
-    setCardNumber("");
-    setExpiry("");
-    setCvv("");
+    setSubmitting(false);
+    setCheckoutError(null);
   }, []);
 
   const closeBooking = useCallback(() => {
+    if (submitting) return;
     setSelectedEvent(null);
     setBookingStep(1);
-  }, []);
+  }, [submitting]);
 
   const updateQty = (tierIdx: number, delta: number) => {
     setQuantities((prev) => {
@@ -333,20 +148,54 @@ export default function Design1() {
     });
   };
 
+  /* CURRENT EVENT */
+  const currentEvent = events.find((e) => e.id === selectedEvent);
+  const tiers = currentEvent?.tiers ?? events[0].tiers;
+
   const totalAmount = quantities.reduce(
     (sum, q, i) => sum + q * tiers[i].price,
     0
   );
+  const totalTickets = quantities.reduce((a, b) => a + b, 0);
 
-  const formatCardNumber = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(.{4})/g, "$1 ").trim();
-  };
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(buyerEmail.trim());
+  const phoneValid = buyerPhone.replace(/\D/g, "").length >= 7;
+  const buyerValid = buyerName.trim().length >= 2 && emailValid && phoneValid;
 
-  const formatExpiry = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 4);
-    if (digits.length > 2) return digits.slice(0, 2) + " / " + digits.slice(2);
-    return digits;
+  /* DEEP LINK: /design/1?book=<eventId> opens the booking panel (used by "Try again") */
+  useEffect(() => {
+    const id = Number(new URLSearchParams(window.location.search).get("book"));
+    if (!id || !events.some((e) => e.id === id)) return;
+    const raf = requestAnimationFrame(() => openBooking(id));
+    return () => cancelAnimationFrame(raf);
+  }, [openBooking]);
+
+  /* CHECKOUT: server prices the order and creates a DPO Pay token */
+  const startCheckout = async () => {
+    if (!currentEvent || submitting || !buyerValid || totalAmount === 0) return;
+    setSubmitting(true);
+    setCheckoutError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: currentEvent.id,
+          items: tiers.map((t, i) => ({ tier: t.id, qty: quantities[i] })),
+          name: buyerName,
+          email: buyerEmail,
+          phone: buyerPhone,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "Could not start payment. Please try again.");
+      }
+      window.location.assign(data.url);
+    } catch (err) {
+      setCheckoutError((err as Error).message);
+      setSubmitting(false);
+    }
   };
 
   /* MARQUEE auto-scroll */
@@ -370,9 +219,6 @@ export default function Design1() {
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
-
-  /* CURRENT EVENT */
-  const currentEvent = events.find((e) => e.id === selectedEvent);
 
   /* ---------------------------------------------------------------- */
   /*  RENDER                                                           */
@@ -1112,8 +958,8 @@ export default function Design1() {
               <div className="h-1 bg-slate-100 shrink-0">
                 <motion.div
                   className="h-full bg-blue-600"
-                  initial={{ width: "25%" }}
-                  animate={{ width: `${bookingStep * 25}%` }}
+                  initial={{ width: "33%" }}
+                  animate={{ width: `${(bookingStep / 3) * 100}%` }}
                   transition={{ duration: 0.3 }}
                 />
               </div>
@@ -1129,7 +975,7 @@ export default function Design1() {
               {/* Step indicator */}
               <div className="px-8 pt-6 pb-4 shrink-0">
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                  {["Details", "Tickets", "Payment", "Confirmed"].map(
+                  {["Details", "Tickets", "Your Info"].map(
                     (label, i) => (
                       <React.Fragment key={label}>
                         <span
@@ -1141,7 +987,7 @@ export default function Design1() {
                         >
                           {label}
                         </span>
-                        {i < 3 && (
+                        {i < 2 && (
                           <ChevronRight className="w-3 h-3 text-slate-300" />
                         )}
                       </React.Fragment>
@@ -1313,13 +1159,13 @@ export default function Design1() {
                           </span>
                         </div>
                         <div className="text-xs text-slate-400 mt-1">
-                          {quantities.reduce((a, b) => a + b, 0)} ticket(s) selected
+                          {totalTickets} ticket(s) selected
                         </div>
                       </div>
                     </motion.div>
                   )}
 
-                  {/* ========= STEP 3: PAYMENT ========= */}
+                  {/* ========= STEP 3: BUYER DETAILS ========= */}
                   {bookingStep === 3 && (
                     <motion.div
                       key="step3"
@@ -1330,106 +1176,93 @@ export default function Design1() {
                       className="p-8"
                     >
                       <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                        Payment Details
+                        Your Details
                       </h2>
                       <p className="text-slate-500 text-sm mb-8">
-                        Enter your card information to complete the booking.
+                        We&apos;ll send your tickets to this email. You&apos;ll pay securely on the DPO Pay page.
                       </p>
 
-                      {/* Card mockup */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="relative w-full h-48 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 p-6 mb-8 shadow-xl overflow-hidden"
+                      <form
+                        id="checkout-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          startCheckout();
+                        }}
+                        className="space-y-4"
                       >
-                        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-blue-500/10" />
-                        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-sky-500/10" />
-                        <div className="flex justify-between items-start relative z-10">
-                          <div className="w-12 h-9 bg-gradient-to-br from-amber-300 to-amber-500 rounded-md" />
-                          <CreditCard className="w-8 h-8 text-slate-400" />
-                        </div>
-                        <div className="mt-6 text-white font-mono text-lg tracking-[0.2em] relative z-10">
-                          {cardNumber || "•••• •••• •••• ••••"}
-                        </div>
-                        <div className="mt-4 flex justify-between items-end relative z-10">
-                          <div className="text-slate-400 text-xs uppercase">
-                            {expiry || "MM / YY"}
-                          </div>
-                          <div className="text-slate-400 text-xs">
-                            {cvv ? "•••" : "CVV"}
-                          </div>
-                        </div>
-                      </motion.div>
-
-                      {/* Form fields */}
-                      <div className="space-y-4">
                         <div>
-                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                            Card Number
+                          <label htmlFor="buyer-name" className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                            Full Name
+                          </label>
+                          <input
+                            id="buyer-name"
+                            type="text"
+                            autoComplete="name"
+                            required
+                            minLength={2}
+                            maxLength={100}
+                            value={buyerName}
+                            onChange={(e) => setBuyerName(e.target.value)}
+                            placeholder="Lungameni Shikongo"
+                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="buyer-email" className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                            Email Address
                           </label>
                           <div className="relative">
                             <input
-                              type="text"
-                              value={cardNumber}
-                              onChange={(e) =>
-                                setCardNumber(
-                                  formatCardNumber(e.target.value)
-                                )
-                              }
-                              placeholder="1234 5678 9012 3456"
-                              maxLength={19}
-                              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base font-mono"
+                              id="buyer-email"
+                              type="email"
+                              autoComplete="email"
+                              required
+                              maxLength={254}
+                              value={buyerEmail}
+                              onChange={(e) => setBuyerEmail(e.target.value)}
+                              placeholder="you@example.com"
+                              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
                             />
-                            <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                            <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
                           </div>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                              Expiry Date
-                            </label>
+                        <div>
+                          <label htmlFor="buyer-phone" className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                            Phone Number
+                          </label>
+                          <div className="relative">
                             <input
-                              type="text"
-                              value={expiry}
-                              onChange={(e) =>
-                                setExpiry(formatExpiry(e.target.value))
-                              }
-                              placeholder="MM / YY"
-                              maxLength={7}
-                              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base font-mono"
+                              id="buyer-phone"
+                              type="tel"
+                              autoComplete="tel"
+                              required
+                              maxLength={20}
+                              value={buyerPhone}
+                              onChange={(e) => setBuyerPhone(e.target.value.replace(/[^\d+\s()-]/g, ""))}
+                              placeholder="+264 81 123 4567"
+                              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
                             />
-                          </div>
-                          <div>
-                            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                              CVV
-                            </label>
-                            <input
-                              type="text"
-                              value={cvv}
-                              onChange={(e) =>
-                                setCvv(
-                                  e.target.value
-                                    .replace(/\D/g, "")
-                                    .slice(0, 3)
-                                )
-                              }
-                              placeholder="123"
-                              maxLength={3}
-                              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base font-mono"
-                            />
+                            <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
                           </div>
                         </div>
-                      </div>
+                      </form>
 
                       {/* Summary */}
                       <div className="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                         <div className="flex justify-between text-sm text-slate-500">
                           <span>{currentEvent.title}</span>
-                          <span>
-                            {quantities.reduce((a, b) => a + b, 0)} ticket(s)
-                          </span>
+                          <span>{totalTickets} ticket(s)</span>
                         </div>
+                        {tiers.map((tier, i) =>
+                          quantities[i] > 0 ? (
+                            <div key={tier.id} className="flex justify-between text-xs text-slate-400">
+                              <span>
+                                {quantities[i]} × {tier.name}
+                              </span>
+                              <span>N${tier.price * quantities[i]}</span>
+                            </div>
+                          ) : null
+                        )}
                         <div className="h-px bg-slate-200" />
                         <div className="flex justify-between">
                           <span className="font-semibold text-slate-700">
@@ -1441,139 +1274,16 @@ export default function Design1() {
                         </div>
                       </div>
 
+                      {checkoutError && (
+                        <div role="alert" className="mt-4 p-4 rounded-xl bg-rose-50 border border-rose-100 text-sm text-rose-700 font-medium">
+                          {checkoutError}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
                         <Lock className="w-3.5 h-3.5" />
-                        Secured with 256-bit SSL encryption
+                        Card payment is handled securely by DPO Pay. We never see your card details.
                       </div>
-                    </motion.div>
-                  )}
-
-                  {/* ========= STEP 4: SUCCESS ========= */}
-                  {bookingStep === 4 && (
-                    <motion.div
-                      key="step4"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="p-8 relative"
-                    >
-                      <Confetti />
-
-                      <div className="text-center mb-8 relative z-20">
-                        <AnimatedCheckmark />
-                        <motion.h2
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 1 }}
-                          className="text-2xl font-bold text-slate-900 mb-2"
-                        >
-                          Booking Confirmed!
-                        </motion.h2>
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 1.2 }}
-                          className="text-slate-500 text-sm"
-                        >
-                          Your digital ticket is ready.
-                        </motion.p>
-                      </div>
-
-                      {/* Digital Ticket */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.4, duration: 0.5 }}
-                        className="relative z-20"
-                      >
-                        <div className="bg-white rounded-2xl border-2 border-slate-100 shadow-lg overflow-hidden">
-                          {/* Ticket header */}
-                          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
-                            <div className="flex items-center justify-between">
-                              <Logo dark size="sm" />
-                              <span className="text-xs font-mono opacity-70">
-                                #ET-{String(currentEvent.id).padStart(4, "0")}-
-                                {Math.random()
-                                  .toString(36)
-                                  .substr(2, 6)
-                                  .toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Perforated edge */}
-                          <div className="flex justify-between -my-3 px-0 relative z-10">
-                            <div className="w-6 h-6 bg-white rounded-full -ml-3 border-r-2 border-slate-100" />
-                            <div className="flex-1 border-b-2 border-dashed border-slate-200 self-center mx-1" />
-                            <div className="w-6 h-6 bg-white rounded-full -mr-3 border-l-2 border-slate-100" />
-                          </div>
-
-                          {/* Ticket body */}
-                          <div className="p-5 pt-6">
-                            <h3 className="font-bold text-slate-900 text-lg mb-3">
-                              {currentEvent.title}
-                            </h3>
-                            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                              <div>
-                                <div className="text-slate-400 text-xs uppercase tracking-wider font-medium">
-                                  Date
-                                </div>
-                                <div className="text-slate-800 font-semibold">
-                                  {currentEvent.fullDate}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-slate-400 text-xs uppercase tracking-wider font-medium">
-                                  Time
-                                </div>
-                                <div className="text-slate-800 font-semibold">
-                                  {currentEvent.time}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-slate-400 text-xs uppercase tracking-wider font-medium">
-                                  Venue
-                                </div>
-                                <div className="text-slate-800 font-semibold">
-                                  {currentEvent.location.split(",")[0]}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-slate-400 text-xs uppercase tracking-wider font-medium">
-                                  Tier
-                                </div>
-                                <div className="text-slate-800 font-semibold">
-                                  {tiers[selectedTier].name}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Barcode placeholder */}
-                            <div className="mt-4 flex flex-col items-center">
-                              <div className="flex gap-[2px] h-14">
-                                {Array.from({ length: 40 }).map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className="bg-slate-800 rounded-sm"
-                                    style={{
-                                      width:
-                                        Math.random() > 0.5 ? 3 : 2,
-                                      height: "100%",
-                                      opacity:
-                                        0.6 + Math.random() * 0.4,
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-[10px] text-slate-400 mt-1.5 font-mono tracking-widest">
-                                ET{currentEvent.id}
-                                {Date.now().toString(36).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1581,19 +1291,20 @@ export default function Design1() {
 
               {/* PANEL FOOTER – navigation buttons */}
               <div className="p-6 bg-white border-t border-slate-100 shrink-0">
-                {bookingStep < 4 ? (
-                  <div className="flex gap-3">
-                    {bookingStep > 1 && (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setBookingStep((s) => s - 1)}
-                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        Back
-                      </motion.button>
-                    )}
+                <div className="flex gap-3">
+                  {bookingStep > 1 && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setBookingStep((s) => s - 1)}
+                      disabled={submitting}
+                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Back
+                    </motion.button>
+                  )}
+                  {bookingStep < 3 ? (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -1605,41 +1316,39 @@ export default function Design1() {
                       className={`flex-1 font-bold py-4 rounded-xl shadow-lg transition-all text-lg flex items-center justify-center gap-2 ${
                         bookingStep === 2 && totalAmount === 0
                           ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                          : bookingStep === 3
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200"
                           : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
                       }`}
                     >
-                      {bookingStep === 1 && (
+                      {bookingStep === 1 ? "Select Tickets" : "Continue"}
+                      <ChevronRight className="w-5 h-5" />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={buyerValid && !submitting ? { scale: 1.02 } : undefined}
+                      whileTap={buyerValid && !submitting ? { scale: 0.98 } : undefined}
+                      type="submit"
+                      form="checkout-form"
+                      disabled={!buyerValid || submitting || totalAmount === 0}
+                      className={`flex-1 font-bold py-4 rounded-xl shadow-lg transition-all text-lg flex items-center justify-center gap-2 ${
+                        !buyerValid || totalAmount === 0
+                          ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200"
+                      }`}
+                    >
+                      {submitting ? (
                         <>
-                          Select Tickets
-                          <ChevronRight className="w-5 h-5" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Redirecting…
                         </>
-                      )}
-                      {bookingStep === 2 && (
-                        <>
-                          Proceed to Payment
-                          <ChevronRight className="w-5 h-5" />
-                        </>
-                      )}
-                      {bookingStep === 3 && (
+                      ) : (
                         <>
                           <Lock className="w-4 h-4" />
                           Pay N${totalAmount}
                         </>
                       )}
                     </motion.button>
-                  </div>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={closeBooking}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all text-lg"
-                  >
-                    Done
-                  </motion.button>
-                )}
+                  )}
+                </div>
               </div>
             </motion.div>
           </>
