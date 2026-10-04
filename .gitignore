@@ -1,6 +1,10 @@
+.env
+.env.local
+.env.*.local
 .env*
 !.env.example
-node_modules
-.next
-.vercel
+.vercel/
+node_modules/
+.next/
 *.tsbuildinfo
+.preview-lint.json
