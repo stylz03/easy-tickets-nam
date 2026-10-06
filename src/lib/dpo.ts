@@ -159,13 +159,14 @@ export async function createToken(input: CreateTokenInput): Promise<CreateTokenR
     el("CompanyRef", input.companyRef) +
     el("RedirectURL", input.redirectUrl) +
     el("BackURL", input.backUrl) +
-    `<CompanyRefUnique>0</CompanyRefUnique>` +
+    `<CompanyRefUnique>1</CompanyRefUnique>` +
     el("PTL", cfg.ptl) +
     (cfg.ptlType === "minutes" ? `<PTLtype>minutes</PTLtype>` : "") +
     el("customerFirstName", c.firstName) +
     el("customerLastName", c.lastName) +
     el("customerEmail", c.email) +
     el("customerPhone", c.phone) +
+    `<TransactionSource>Website</TransactionSource>` +
     `</Transaction>` +
     `<Services><Service>` +
     el("ServiceType", cfg.serviceType) +
@@ -235,6 +236,7 @@ export async function verifyToken(transToken: string): Promise<VerifyTokenResult
     el("CompanyToken", cfg.companyToken) +
     `<Request>verifyToken</Request>` +
     el("TransactionToken", transToken) +
+    `<VerifyTransaction>1</VerifyTransaction>` +
     `</API3G>`;
   const resXml = await postXml(cfg, xml);
   const result = xmlTag(resXml, "Result") ?? "";

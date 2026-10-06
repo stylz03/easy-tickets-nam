@@ -3,8 +3,7 @@
 ## Source and boundaries
 Branch: design-1-live, based on deployed source commit 834430c.
 Working copy: .preview/design-one within the laptop project.
-The app source, dependencies and runtime configuration are unchanged from that commit. This handover only adds/updates ignored-file rules, a blank environment template, seed data, deployment notes and local database tests.
-Do not deploy or apply these files to any remote database as part of this handover.
+The handover commit contains the original deployed source, database migrations, seed data, deployment notes and local database tests. Later commits may refine the application while preserving this baseline in Git history.
 
 The 2026-10-03 production promotion rebuilt this source. The public alias is https://easyticketsnam.vercel.app. The last verified site used preview mode; integration credentials and actual event allocations still need setup.
 
@@ -21,7 +20,7 @@ The 2026-10-03 production promotion rebuilt this source. The public alias is htt
 | EASY_TICKETS_PREVIEW | Server. Literal true returns example catalogue and prevents admin-client access. Remove or set false only after schema and configuration are ready. |
 | NEXT_PUBLIC_EASY_TICKETS_PREVIEW | Public build flag. Literal true disables Auth clients and cookie refresh. Change together with the server preview flag and rebuild. |
 | DPO_COMPANY_TOKEN | Server secret from DPO; use sandbox credentials for testing first. |
-| DPO_SERVICE_TYPE | Server. DPO assigned service type; supplied test documentation identifies 3854. |
+| DPO_SERVICE_TYPE | Server. DPO assigned service ID. The merchant onboarding email supplied test ID 5525; replace it with the live ID when DPO issues production credentials. |
 | DPO_API_URL | Server optional override; default https://secure.3gdirectpay.com/API/v6/. |
 | DPO_PAYMENT_URL | Server optional hosted payment URL; default https://secure.3gdirectpay.com/payv2.php?ID=. |
 | DPO_PAY_URL | Server legacy fallback for DPO_PAYMENT_URL. |
@@ -98,7 +97,9 @@ The signup form requests /auth/callback?next=<internal path>; password reset use
 Standard confirmation/reset emails are distinct from ticket-delivery email: automatic ticket emailing is unfinished.
 
 ## DPO and reconciliation
-DPO uses createToken -> hosted checkout -> server verifyToken. Amount/currency/order reference are verified before paying an order, and the database issues one ticket per admission transactionally. Return URLs use /api/dpo/return with signed ref and sig; they require the canonical public origin and a stable signing secret.
+DPO uses createToken -> hosted checkout -> server verifyToken. The integration sends a unique company reference, identifies the transaction source as Website, and explicitly requests transaction verification. Amount/currency/order reference are verified before paying an order, and the database issues one ticket per admission transactionally. Return URLs use /api/dpo/return with signed ref and sig; they require the canonical public origin and a stable signing secret.
+
+On 2026-10-06, a direct createToken request using test service ID 5525 and the onboarding test company token reached DPO but returned result 802 with the explanation `Company is not active`. The onboarding email requires the merchant to log in, change the temporary password and accept the service agreement. Repeat the createToken check after DPO activates the account; do not enable public sales based only on saved credentials.
 
 Schedule authenticated GET /api/jobs/reconcile with Authorization: Bearer <CRON_SECRET> after live configuration is ready. Missing secret returns 503; incorrect/missing credential returns 401. No cron schedule is included or deployed by this handover.
 Use a cadence appropriate to purchase volume (for example every few minutes), with an execution limit compatible with the 60-second route limit. Each invocation handles up to 10 oldest-updated pending orders, with parallel gateway checks.
@@ -106,4 +107,8 @@ It verifies saved DPO tokens even if buyers never return. Confirmed expiry/cance
 Do not activate a scheduler while preview mode is true. The admin client deliberately blocks live database access in that mode.
 
 ## Known scope
-Wallet passes, ticket-delivery emails, controlled ticket transfers, refunds/payouts and numbered seat maps remain unfinished. This handover does not implement them or change any current app behaviour.
+The app includes an installable manifest, branded app icons, a mobile navigation dock and a service worker that caches only public static assets. It deliberately does not cache HTML, checkout responses, account data or QR-ticket pages. The service worker can display and safely open same-origin push payloads, but subscription storage and delivery are not active until VAPID keys, a Supabase subscription table and a notification sender are added.
+
+Apple Wallet and Google Wallet passes are not active. Apple requires an Apple Developer Pass Type ID, signing certificate/private key and WWDR certificate. Google requires an approved Wallet issuer account, service-account credentials and an event-ticket class. Add those credentials as server-only deployment secrets, generate one signed pass/object per issued ticket, and show wallet actions only after the relevant provider returns a valid pass. The existing QR page, download, print/PDF and share actions remain the working ticket options.
+
+Ticket-delivery emails, controlled ticket transfers, refunds/payouts and numbered seat maps remain unfinished.

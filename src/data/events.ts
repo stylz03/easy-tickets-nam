@@ -83,7 +83,7 @@ const baseEvents: BaseEvent[] = [
     time: "14:00 – 22:00",
     category: "Culture",
     description:
-      "Immerse yourself in an unforgettable celebration of Namibian heritage. Featuring live performances from over 30 local artists, traditional dance showcases, artisan craft markets, and a culinary journey through the flavours of every region. Perfect for families, culture enthusiasts, and anyone looking to experience the heart of Namibia.",
+      "Namibian music, dance, craft and food come together at Independence Stadium. See the day’s artists, browse local makers and taste dishes from across the country. Suitable for families.",
   },
   {
     id: 2,
@@ -97,7 +97,7 @@ const baseEvents: BaseEvent[] = [
     time: "16:00 – 02:00",
     category: "Music",
     description:
-      "Dance under the stars at Namibia's most iconic electronic music festival set against the breathtaking desert dunes. Three stages, 20+ DJs, immersive art installations, and gourmet food trucks make this a once-in-a-lifetime experience for music lovers.",
+      "Three stages of electronic music in the Swakopmund dunes, with Namibian and visiting DJs, art installations and food vendors. Gates open at 16:00.",
   },
   {
     id: 3,
@@ -111,7 +111,7 @@ const baseEvents: BaseEvent[] = [
     time: "10:00 – 18:00",
     category: "Food",
     description:
-      "A gastronomic adventure showcasing the finest Namibian cuisine and boutique wines. Enjoy live cooking demonstrations from award-winning chefs, wine tastings from local vineyards, artisan cheese and charcuterie stalls, and hands-on cooking workshops.",
+      "Meet Namibian chefs, winemakers and independent producers at Zoo Park. The programme includes tastings, cooking demonstrations and practical workshops.",
   },
   {
     id: 4,
@@ -125,7 +125,7 @@ const baseEvents: BaseEvent[] = [
     time: "06:00 – 14:00",
     category: "Sport",
     description:
-      "Run through the wild heart of Africa on this unique trail marathon winding through Etosha's iconic landscapes. Choose from 10K, 21K, or full marathon distances. Post-race celebrations include a braai, live music, and awards ceremony.",
+      "Choose a 10 km, 21 km or full-marathon trail through Etosha’s landscape. Entry includes the post-race braai, live music and awards.",
   },
   {
     id: 5,
@@ -139,7 +139,7 @@ const baseEvents: BaseEvent[] = [
     time: "17:00 – 23:00",
     category: "Music",
     description:
-      "Enjoy world-class jazz performances right on the Walvis Bay waterfront. Over two magical evenings, experience smooth jazz, Afro-fusion, and soul from both Namibian and international artists while savouring seafood and sunset cocktails.",
+      "Two evenings of jazz, Afro-fusion and soul at the Walvis Bay Waterfront, with Namibian and visiting artists, seafood vendors and sunset sets.",
   },
   {
     id: 6,
@@ -153,7 +153,7 @@ const baseEvents: BaseEvent[] = [
     time: "19:00 – 22:30",
     category: "Entertainment",
     description:
-      "Get ready for a night of non-stop laughter featuring Namibia's sharpest comedians and two international headliners. With a full bar, delicious finger food, and a late-night after-party, this is the ultimate comedy experience.",
+      "Namibian comedians share the National Theatre stage with two visiting headliners. Doors open at 19:00; bar and food service are available.",
   },
 ];
 
