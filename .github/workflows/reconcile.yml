@@ -1,0 +1,29 @@
+name: Reconcile pending orders
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /api/jobs/reconcile
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "CRON_SECRET is not set"; exit 1; fi
+          code=$(curl -sS -o body.json -w '%{http_code}' --max-time 90 --retry 2 --retry-all-errors \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://easyticketsnam.vercel.app/api/jobs/reconcile)
+          echo "HTTP $code"
+          cat body.json; echo
+          case "$code" in 2??) ;; *) exit 1 ;; esac
