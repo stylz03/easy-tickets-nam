@@ -82,7 +82,7 @@ Do not grant end users service_role or direct access to order/ticket secrets.
 Bucket: website-event-images, public, 8 MiB limit (8388608 bytes); PNG, JPEG and WebP.
 The upload API verifies the manager's organisation, file size and binary image signature, then uploads using the server service-role key to organisation-UUID/random-UUID.ext.
 There are no direct client upload/delete policies on storage.objects. Public bucket downloads serve event artwork; server service-role uploads bypass object RLS. No private ticket or buyer data belongs in this public bucket.
-Existing seeded artwork is served from repository public/images/design1; it does not require uploads or extra buckets. No wallet-pass bucket or email provider integration exists yet.
+Existing seeded artwork is served from repository public/images/namibia; it does not require uploads or extra buckets. These are credited Namibian location photographs for the example catalogue, not photographs of the listed events. No wallet-pass bucket or email provider integration exists yet.
 
 ## Supabase Auth settings
 Enable Email/password signup and sign-in. This app does not expose Google, Apple or other social/OAuth sign-in flows; those providers are not required.
