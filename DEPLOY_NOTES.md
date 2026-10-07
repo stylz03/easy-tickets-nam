@@ -5,7 +5,7 @@ Branch: design-1-live, based on deployed source commit 834430c.
 Working copy: .preview/design-one within the laptop project.
 The handover commit contains the original deployed source, database migrations, seed data, deployment notes and local database tests. Later commits may refine the application while preserving this baseline in Git history.
 
-The 2026-10-03 production promotion rebuilt this source. The public alias is https://easyticketsnam.vercel.app. The last verified site used preview mode; integration credentials and actual event allocations still need setup.
+The 2026-10-03 production promotion rebuilt this source. The public alias is https://easyticketsnam.vercel.app. Production remains in preview mode while Supabase setup, real event allocations and end-to-end checkout testing are completed.
 
 ## Environment inventory
 .env.example contains every environment name directly read by this app, with empty values. Empty template values are not operational settings.
@@ -19,8 +19,8 @@ The 2026-10-03 production promotion rebuilt this source. The public alias is htt
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Public legacy fallback when publishable key is absent. Only one public-key variable needs configuration. |
 | EASY_TICKETS_PREVIEW | Server. Literal true returns example catalogue and prevents admin-client access. Remove or set false only after schema and configuration are ready. |
 | NEXT_PUBLIC_EASY_TICKETS_PREVIEW | Public build flag. Literal true disables Auth clients and cookie refresh. Change together with the server preview flag and rebuild. |
-| DPO_COMPANY_TOKEN | Server secret from DPO; use sandbox credentials for testing first. |
-| DPO_SERVICE_TYPE | Server. DPO assigned service ID. The merchant onboarding email supplied test ID 5525; replace it with the live ID when DPO issues production credentials. |
+| DPO_COMPANY_TOKEN | Server secret from DPO. Set the live Company ID in Production and the test token in Preview; never expose either in a public variable or commit. |
+| DPO_SERVICE_TYPE | Server. DPO assigned service ID. The live Events Ticketing service type is 114161; Preview can retain test service ID 5525. |
 | DPO_API_URL | Server optional override; default https://secure.3gdirectpay.com/API/v6/. |
 | DPO_PAYMENT_URL | Server optional hosted payment URL; default https://secure.3gdirectpay.com/payv2.php?ID=. |
 | DPO_PAY_URL | Server legacy fallback for DPO_PAYMENT_URL. |
@@ -99,7 +99,11 @@ Standard confirmation/reset emails are distinct from ticket-delivery email: auto
 ## DPO and reconciliation
 DPO uses createToken -> hosted checkout -> server verifyToken. The integration sends a unique company reference, identifies the transaction source as Website, and explicitly requests transaction verification. Amount/currency/order reference are verified before paying an order, and the database issues one ticket per admission transactionally. Return URLs use /api/dpo/return with signed ref and sig; they require the canonical public origin and a stable signing secret.
 
-On 2026-10-06, a direct createToken request using test service ID 5525 and the onboarding test company token reached DPO but returned result 802 with the explanation `Company is not active`. The onboarding email requires the merchant to log in, change the temporary password and accept the service agreement. Repeat the createToken check after DPO activates the account; do not enable public sales based only on saved credentials.
+On 2026-10-06, the original test credentials returned result 802, `Company is not active`. On 2026-10-07, DPO supplied the live Company ID and Events Ticketing service type 114161. A direct live API smoke test created a synthetic NAD 1.00 transaction (result 000), verified that it was unpaid (result 900), and cancelled its token (result 000). No customer details or card data were submitted, and no charge was made. This validates the live API credentials and create/verify/cancel calls, but it does not validate a completed payment or ticket issuance.
+
+The live Company ID and service type, plus a 30-minute payment time limit, have been added as encrypted server-only Vercel Production environment variables. Preview retains the test merchant. Production preview flags remain enabled, so the public checkout still returns 503. Redeploy after environment changes to make them effective; keep preview mode until the Easy Tickets Supabase project has the migrations, real ticket capacities, Auth/email settings and a successful end-to-end test purchase.
+
+This Next.js application uses DPO's API directly. The customer completes card entry on DPO's hosted payment page; the site owns the order form, redirect, return verification and ticket screen. A WordPress shopping-cart plugin is unnecessary. Ask DPO whether current merchant settings allow branding the hosted payment page with the Easy Tickets logo and colours; do not collect card numbers in the application.
 
 Schedule authenticated GET /api/jobs/reconcile with Authorization: Bearer <CRON_SECRET> after live configuration is ready. Missing secret returns 503; incorrect/missing credential returns 401. No cron schedule is included or deployed by this handover.
 Use a cadence appropriate to purchase volume (for example every few minutes), with an execution limit compatible with the 60-second route limit. Each invocation handles up to 10 oldest-updated pending orders, with parallel gateway checks.
