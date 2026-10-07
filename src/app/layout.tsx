@@ -15,7 +15,11 @@ export const metadata: Metadata = {
   applicationName: "Easy Tickets Namibia",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Easy Tickets" },
-  icons: { apple: [{ url: "/pwa/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/icon.svg"],
+    apple: [{ url: "/pwa/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#164dcc", colorScheme: "light", width: "device-width", initialScale: 1, viewportFit: "cover" };
