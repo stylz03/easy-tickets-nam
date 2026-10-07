@@ -6,6 +6,7 @@ import { getTier } from "@/data/events";
 import { siteUrl } from "@/lib/site-url";
 import { catalogue } from "@/lib/catalogue";
 import { currentUser } from "@/lib/supabase/server";
+import { checkoutEnabled } from "@/lib/checkout-availability";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -80,6 +81,7 @@ function fail(status: number, error: string) {
 
 export async function POST(req: Request) {
   if (req.headers.get("origin") !== new URL(req.url).origin) return fail(403, "Invalid request origin");
+  if (!checkoutEnabled()) return fail(503, "Bookings are not open yet.");
   let parsed: { body: CheckoutBody; isForm: boolean };
   try {
     parsed = await readBody(req);

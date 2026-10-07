@@ -2,6 +2,8 @@
 
 Target project: `mjnvfiixmywzlfznqvnf` (`https://mjnvfiixmywzlfznqvnf.supabase.co`). Check that exact project reference in the dashboard before running SQL. These scripts are intended for the Easy Tickets project only; they do not alter the DPO merchant.
 
+**Existing Easy Tickets project status (2026-10-07):** SQL Editor results supplied by the project owner showed all seven `website_*` tables with RLS enabled, all six platform functions, the ticket trigger and the artwork bucket. Six older demonstration events already existed with 100-capacity tiers and test orders; the owner subsequently verified `demo_rows = 6` and `published_demos = 0`. Do not rerun these migrations or the seed against that project. The instructions below are for a fresh project schema only. Keep test orders and tickets intact.
+
 The website tables are namespaced with `website_` to avoid changing unrelated mobile-app tables. The `orders` table is shared by the website checkout. **Do not paste all files into one SQL Editor tab.** Run each complete file in a separate query, in the order below, and keep the successful query history. SQL Editor runs do not automatically create Supabase CLI migration-history entries.
 
 ## 1. Preflight: run this first

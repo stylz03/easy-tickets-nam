@@ -18,6 +18,7 @@ The 2026-10-03 production promotion rebuilt this source. The public alias is htt
 | NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | Public key preferred by Auth clients. |
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Public legacy fallback when publishable key is absent. Only one public-key variable needs configuration. |
 | EASY_TICKETS_PREVIEW | Server. Literal true returns example catalogue and prevents admin-client access. Remove or set false only after schema and configuration are ready. |
+| EASY_TICKETS_CHECKOUT_ENABLED | Server. Only literal true permits the checkout API to create orders and DPO tokens. Unset or false keeps bookings closed even when Supabase Auth and organiser tools are enabled. |
 | NEXT_PUBLIC_EASY_TICKETS_PREVIEW | Public build flag. Literal true disables Auth clients and cookie refresh. Change together with the server preview flag and rebuild. |
 | DPO_COMPANY_TOKEN | Server secret from DPO. Set the live Company ID in Production and the test token in Preview; never expose either in a public variable or commit. |
 | DPO_SERVICE_TYPE | Server. DPO assigned service ID. The live Events Ticketing service type is 114161; Preview can retain test service ID 5525. |
@@ -82,7 +83,7 @@ Do not grant end users service_role or direct access to order/ticket secrets.
 Bucket: website-event-images, public, 8 MiB limit (8388608 bytes); PNG, JPEG and WebP.
 The upload API verifies the manager's organisation, file size and binary image signature, then uploads using the server service-role key to organisation-UUID/random-UUID.ext.
 There are no direct client upload/delete policies on storage.objects. Public bucket downloads serve event artwork; server service-role uploads bypass object RLS. No private ticket or buyer data belongs in this public bucket.
-Existing seeded artwork is served from repository public/images/namibia; it does not require uploads or extra buckets. These are credited Namibian location photographs for the example catalogue, not photographs of the listed events. No wallet-pass bucket or email provider integration exists yet.
+The current repository seed references public/images/namibia; it does not require uploads or extra buckets. These are credited Namibian location photographs for example events, not photographs of those events. The existing Easy Tickets database has older /images/design1 artwork on its six demonstration events; those rows were unpublished on 2026-10-07 and should not be reseeded or treated as saleable inventory. No wallet-pass bucket or email provider integration exists yet.
 
 ## Supabase Auth settings
 Enable Email/password signup and sign-in. This app does not expose Google, Apple or other social/OAuth sign-in flows; those providers are not required.
@@ -101,7 +102,7 @@ DPO uses createToken -> hosted checkout -> server verifyToken. The integration s
 
 On 2026-10-06, the original test credentials returned result 802, `Company is not active`. On 2026-10-07, DPO supplied the live Company ID and Events Ticketing service type 114161. A direct live API smoke test created a synthetic NAD 1.00 transaction (result 000), verified that it was unpaid (result 900), and cancelled its token (result 000). No customer details or card data were submitted, and no charge was made. This validates the live API credentials and create/verify/cancel calls, but it does not validate a completed payment or ticket issuance.
 
-The live Company ID and service type, plus a 30-minute payment time limit, have been added as encrypted server-only Vercel Production environment variables. Preview retains the test merchant. Production preview flags remain enabled, so the public checkout still returns 503. Redeploy after environment changes to make them effective; keep preview mode until the Easy Tickets Supabase project has the migrations, real ticket capacities, Auth/email settings and a successful end-to-end test purchase.
+The live Company ID and service type, plus a 30-minute payment time limit, have been added as encrypted server-only Vercel Production environment variables. Preview retains the test merchant. Production preview flags remain enabled, and the separate checkout gate is closed by default, so the public checkout still returns 503. After verifying Supabase Auth settings and the existing schema, turn off both preview flags together to test accounts and organiser tools while leaving EASY_TICKETS_CHECKOUT_ENABLED unset or false. The six demonstration events have been unpublished; create verified real events and approved allocations through the organiser workflow. Enable checkout only after a controlled end-to-end DPO payment, ticket issuance and check-in test. Redeploy after environment changes to make them effective.
 
 This Next.js application uses DPO's API directly. The customer completes card entry on DPO's hosted payment page; the site owns the order form, redirect, return verification and ticket screen. A WordPress shopping-cart plugin is unnecessary. Ask DPO whether current merchant settings allow branding the hosted payment page with the Easy Tickets logo and colours; do not collect card numbers in the application.
 
