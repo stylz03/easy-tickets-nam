@@ -4,23 +4,34 @@ import { useEffect } from "react";
 
 export default function HomeMotion() {
   useEffect(() => {
-    document.documentElement.classList.add("motion-ready");
-    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      elements.forEach((element) => element.dataset.visible = "true");
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        (entry.target as HTMLElement).dataset.visible = "true";
-        observer.unobserve(entry.target);
+    const root = document.documentElement;
+    root.classList.add("home-atmosphere");
+    root.dataset.scene = "desert";
+    const scenes = Array.from(document.querySelectorAll<HTMLElement>("[data-scene]"));
+    let frame = 0;
+    const updateScene = () => {
+      frame = 0;
+      const marker = window.innerHeight * 0.48;
+      let scene = "desert";
+      for (const section of scenes) {
+        if (section.getBoundingClientRect().top > marker) break;
+        scene = section.dataset.scene ?? scene;
       }
-    }, { rootMargin: "0px 0px -12%", threshold: 0.12 });
-
-    elements.forEach((element) => observer.observe(element));
-    return () => observer.disconnect();
+      root.dataset.scene = scene;
+    };
+    const requestScene = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateScene);
+    };
+    updateScene();
+    window.addEventListener("scroll", requestScene, { passive: true });
+    window.addEventListener("resize", requestScene);
+    return () => {
+      window.removeEventListener("scroll", requestScene);
+      window.removeEventListener("resize", requestScene);
+      if (frame) window.cancelAnimationFrame(frame);
+      root.classList.remove("home-atmosphere");
+      delete root.dataset.scene;
+    };
   }, []);
 
   return null;
