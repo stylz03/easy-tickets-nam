@@ -20,5 +20,5 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/migrations-seed.test.mjs tests/platform.test.mjs
+      - run: node --test tests/migrations-seed.test.mjs tests/notifications-migration.test.mjs tests/platform.test.mjs
       - run: npm run build
