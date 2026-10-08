@@ -1,0 +1,24 @@
+name: Verify app and database migrations
+
+on:
+  push:
+    branches: [design-1-live]
+  pull_request:
+    branches: [design-1-live]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/migrations-seed.test.mjs tests/platform.test.mjs
+      - run: npm run build

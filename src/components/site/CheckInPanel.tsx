@@ -29,6 +29,12 @@ export default function CheckInPanel() {
   const video = useRef<HTMLVideoElement>(null);
   const controls = useRef<IScannerControls | null>(null);
 
+  async function switchAccount() {
+    controls.current?.stop();
+    await browserSupabase().auth.signOut();
+    window.location.assign("/auth/sign-in?next=/check-in");
+  }
+
   useEffect(() => {
     if (!user) {
       setEvents([]);
@@ -146,5 +152,6 @@ export default function CheckInPanel() {
     {loadingEvents && <p className="inline-preview" role="status">Loading assigned events…</p>}
     {!loadingEvents && !error && !events.length && <p className="inline-preview">No events are assigned to {user.email}. Ask your event manager to assign this exact email address.</p>}
     <button type="button" className="button secondary" disabled={loadingEvents} onClick={() => setReload((current) => current + 1)}>Refresh assignments</button>
+    {!loadingEvents && !events.length && <button type="button" className="button secondary" onClick={switchAccount}>Sign in with another staff account</button>}
   </div>;
 }

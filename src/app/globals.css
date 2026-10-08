@@ -483,3 +483,23 @@ body:has(.receipt-page),body:has(.admission-page){background:#f3f0e9}
 @keyframes receipt-cut{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes receipt-admission{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.receipt-confirmed-mark,.receipt-perforation,.receipt-ticket-row{animation:receipt-fade 180ms ease-out both}}
+/* Keep mobile forms at the browser's natural scale while the keyboard opens. */
+@media(max-width:640px){
+  html{-webkit-text-size-adjust:100%}
+  .auth-card,.booking-panel,.event-editor,.editor-main,.editor-side{min-width:0;max-width:100%}
+  .form-stack input,.form-stack select,.form-stack textarea,.filter-bar input,.filter-bar select,.event-search input,.event-search select{width:100%;max-width:100%;min-width:0;font-size:16px;line-height:1.35}
+  .form-stack textarea{resize:vertical}
+  .form-columns{flex-direction:column}
+  .form-columns>label{width:100%;flex-basis:auto}
+  .payment-handoff{min-height:100svh;overflow:auto;align-items:center}
+  .handoff-card{max-height:calc(100svh - 32px);overflow:auto}
+}
+.nearby-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:8px 12px;border:1px solid #cdd8dc;border-radius:6px;color:#24435a;background:#fff;font-size:12px;font-weight:700;white-space:nowrap}
+.nearby-button.active{border-color:#a7c8b6;color:#176c49;background:#edf7f0}
+.nearby-hint{margin:9px 2px 0;color:#526578;font-size:12px}
+@media(max-width:640px){.nearby-button{width:100%;font-size:13px}}
+.notification-settings{display:grid;gap:12px;margin-top:30px;padding-top:24px;border-top:1px solid var(--line)}
+.notification-settings h3{font-size:18px}
+.notification-settings>label{display:flex;align-items:center;gap:10px;font-size:13px}
+.notification-settings input{width:18px;height:18px;accent-color:var(--blue)}
+.notification-settings .button{justify-self:start}

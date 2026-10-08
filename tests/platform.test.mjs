@@ -18,6 +18,7 @@ before(async()=>{
  await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to anon,authenticated,service_role;create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);");
  await db.exec(await readFile(new URL('../supabase/migrations/20261003110000_orders.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261003160000_website_platform.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261008120000_notifications.sql',import.meta.url),'utf8'));
  await db.query('insert into auth.users values($1,$2,now()),($3,$4,now()),($5,$6,now())',[owner,'owner@example.test',stranger,'stranger@example.test',scanner,'scanner@example.test']);
  await db.query('insert into website_organisations(id,name) values($1,$2)',[org,'Test organiser']);
  await db.query('insert into website_organiser_members values($1,$2,$3)',[org,owner,'owner']);
@@ -33,6 +34,18 @@ test('account profiles stay private and cannot be edited by another buyer',async
  await as('authenticated',owner,()=>db.query('insert into website_profiles(user_id,full_name) values($1,$2)',[owner,'Test Buyer']));
  const rows=await as('authenticated',stranger,()=>db.query('select * from website_profiles'));assert.equal(rows.rows.length,0);
  await assert.rejects(as('authenticated',stranger,()=>db.query('insert into website_profiles(user_id,full_name) values($1,$2)',[owner,'Intruder'])),/row-level security/);
+});
+test('reminder preferences belong to their account and delivery log stays server-only',async()=>{
+ await as('authenticated',owner,()=>db.query('insert into website_notification_preferences(user_id,email_saved) values($1,true)',[owner]));
+ const visible=await as('authenticated',stranger,()=>db.query('select * from website_notification_preferences'));
+ assert.equal(visible.rows.length,0);
+ await as('authenticated',stranger,()=>db.query('update website_notification_preferences set email_saved=false where user_id=$1',[owner]));
+ const own=await as('authenticated',owner,()=>db.query('select email_saved from website_notification_preferences where user_id=$1',[owner]));
+ assert.equal(own.rows[0].email_saved,true);
+ await assert.rejects(as('authenticated',owner,()=>db.query('select * from website_notification_log')),/permission denied/);
+ await as('service_role',null,()=>db.query('insert into website_push_subscriptions(endpoint,user_id,p256dh,auth_secret) values($1,$2,$3,$4)',[
+  'https://push.example.test/subscription/12345',owner,'a'.repeat(70),'b'.repeat(20)]));
+ await assert.rejects(as('authenticated',stranger,()=>db.query('select endpoint from website_push_subscriptions')),/permission denied/);
 });
 test('database checks prices and prevents selling beyond event capacity',async()=>{
  await assert.rejects(as('service_role',null,()=>db.query('select (reserve_website_order($1)).id',[order('ET-20261003-A0000001',99)])),/prices changed/);
