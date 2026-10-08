@@ -76,7 +76,7 @@ The seed test compares every original display field and all 18 tier prices again
 ## Organiser/account provisioning
 Use Supabase Auth to create and confirm real customer, organiser and staff accounts.
 After an organiser exists in auth.users, use trusted administration to add that user's UUID to website_organiser_members for the seed organisation with role owner or manager. Users cannot self-grant membership.
-Profiles are written through the account API; no separate profile-creation trigger is required by the app. Event managers assign confirmed staff email accounts through the organiser API. Staff can only check in assigned event tickets.
+Profiles are written through the account API; no separate profile-creation trigger is required by the app. Event managers can assign an existing confirmed account or email a new staff invitation from the organiser dashboard. The invitation uses the server-only Supabase Auth Admin API and grants scanner access only to the selected event. Staff can only check in assigned event tickets.
 Do not grant end users service_role or direct access to order/ticket secrets.
 
 ## Storage
@@ -87,22 +87,23 @@ The current repository seed references public/images/namibia; it does not requir
 
 ## Supabase Auth settings
 Enable Email/password signup and sign-in. This app does not expose Google, Apple or other social/OAuth sign-in flows; those providers are not required.
-Enable email confirmations and provide production SMTP/sender configuration for confirmation and password-reset messages. The UI requires a minimum 10-character new password; configure Auth consistently.
+Enable email confirmations and provide production SMTP/sender configuration for confirmation, password-reset and staff-invitation messages. The UI requires a minimum 10-character new password; configure Auth consistently.
 Set Site URL to https://easyticketsnam.vercel.app (change when the custom domain is chosen).
 Allow redirect URLs for:
 - https://easyticketsnam.vercel.app/auth/callback and its next query variants.
 - The chosen custom-domain /auth/callback and query variants when added.
 - Only the Vercel preview origins actually used for testing, with their /auth/callback variants.
+- The same staging and production origins with /auth/update-password for staff invitation acceptance.
 - http://localhost:3100/auth/callback and variants for local testing.
 The signup form requests /auth/callback?next=<internal path>; password reset uses /auth/callback?next=%2Fauth%2Fupdate-password. The callback exchanges a PKCE code and then allows only safe internal next paths. Ensure confirmation/recovery email templates preserve Supabase's confirmation/redirect flow so the callback receives code. Test both email flows before enabling accounts publicly.
-Standard confirmation/reset emails are distinct from ticket-delivery email: automatic ticket emailing is unfinished.
+Keep the Supabase Invite user email template enabled and verify that its confirmation link honours the requested /auth/update-password redirect. The invited staff member sets a password there before opening /check-in. Standard confirmation/reset/invite emails are distinct from ticket-delivery email: automatic ticket emailing is unfinished.
 
 ## DPO and reconciliation
 DPO uses createToken -> hosted checkout -> server verifyToken. The integration sends a unique company reference, identifies the transaction source as Website, and explicitly requests transaction verification. Amount/currency/order reference are verified before paying an order, and the database issues one ticket per admission transactionally. Return URLs use /api/dpo/return with signed ref and sig; they require the canonical public origin and a stable signing secret.
 
 On 2026-10-06, the original test credentials returned result 802, `Company is not active`. On 2026-10-07, DPO supplied the live Company ID and Events Ticketing service type 114161. A direct live API smoke test created a synthetic NAD 1.00 transaction (result 000), verified that it was unpaid (result 900), and cancelled its token (result 000). No customer details or card data were submitted, and no charge was made. This validates the live API credentials and create/verify/cancel calls, but it does not validate a completed payment or ticket issuance.
 
-The live Company ID and service type, plus a 30-minute payment time limit, have been added as encrypted server-only Vercel Production environment variables. Preview retains the test merchant. Production preview flags remain enabled, and the separate checkout gate is closed by default, so the public checkout still returns 503. After verifying Supabase Auth settings and the existing schema, turn off both preview flags together to test accounts and organiser tools while leaving EASY_TICKETS_CHECKOUT_ENABLED unset or false. The six demonstration events have been unpublished; create verified real events and approved allocations through the organiser workflow. Enable checkout only after a controlled end-to-end DPO payment, ticket issuance and check-in test. Redeploy after environment changes to make them effective.
+The live Company ID and service type, plus a 30-minute payment time limit, have been added as encrypted server-only Vercel Production environment variables. On 2026-10-08, the live merchant token and checkout gate were scoped to one staging deployment at https://easyticketsnam-staging.vercel.app; they are not project-wide Preview variables. The public production checkout still returns 503. A buyer completed a real NAD 1.00 test payment for event 1000; DPO returned to the site, the booking confirmation rendered, and its QR ticket page loaded. Complete the planned separate NAD 2.00 and NAD 3.00 transactions and a staff check-in before opening general sales. A new staging deployment must receive the same deployment-scoped DPO secret and checkout flag before the staging alias is moved. The six demonstration events remain unpublished.
 
 This Next.js application uses DPO's API directly. The customer completes card entry on DPO's hosted payment page; the site owns the order form, redirect, return verification and ticket screen. A WordPress shopping-cart plugin is unnecessary. Ask DPO whether current merchant settings allow branding the hosted payment page with the Easy Tickets logo and colours; do not collect card numbers in the application.
 
