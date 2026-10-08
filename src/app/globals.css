@@ -471,3 +471,14 @@ body:has(.receipt-page),body:has(.admission-page){background:#f3f0e9}
 @media(max-width:640px){body:has(.receipt-page),body:has(.admission-page){padding-bottom:0}.receipt-hero{min-height:310px}.receipt-topbar,.admission-topbar{height:65px;padding:0 19px}.receipt-hero-copy{margin-top:20px}.receipt-content{margin-top:-21px}.receipt-event,.receipt-tickets,.receipt-facts{padding-left:20px;padding-right:20px}.receipt-list-heading>span{font-size:10px}.admission-content{padding:7px 16px 36px}.admission-ticket-head{padding:25px 23px}.admission-ticket-body{padding:24px 22px}.admission-ticket-head h2{font-size:27px}}
 @media(prefers-reduced-motion:reduce){.receipt-hero-copy,.receipt-content,.admission-ticket,.entry-dialog[open]{animation:receipt-fade 180ms ease-out both}@keyframes receipt-fade{from{opacity:0}to{opacity:1}}}
 @media print{.admission-topbar,.admission-page .ticket-actions,.admission-footnote,.admission-page .ticket-caption{display:none!important}.admission-page{background:#fff}.admission-content{padding:0}.admission-ticket{box-shadow:none;break-inside:avoid}.admission-qr-button{box-shadow:none}}
+/* One-time issuance sequence: confirmation seal, cut seam, then individual admissions. */
+.receipt-confirmed-mark{animation:receipt-seal 560ms var(--ease-out-expo) 120ms both}
+.receipt-perforation{animation:receipt-cut 450ms var(--ease-out-expo) 520ms both}
+.receipt-ticket-row{animation:receipt-admission 390ms var(--ease-out-expo) both}
+.receipt-ticket-row:nth-of-type(2){animation-delay:680ms}
+.receipt-ticket-row:nth-of-type(3){animation-delay:760ms}
+.receipt-ticket-row:nth-of-type(n+4){animation-delay:840ms}
+@keyframes receipt-seal{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+@keyframes receipt-cut{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes receipt-admission{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.receipt-confirmed-mark,.receipt-perforation,.receipt-ticket-row{animation:receipt-fade 180ms ease-out both}}
