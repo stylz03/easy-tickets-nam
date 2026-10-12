@@ -29,6 +29,7 @@ export default async function FailedPage({ searchParams }: { searchParams: Promi
           </div>
         )}
         <p className="text-xs text-slate-400 mb-8">Tickets appear after payment is confirmed. If you were charged, check My tickets or contact support with your order reference.</p>
+        {ref && <Link href={`/checkout/recover?ref=${encodeURIComponent(ref)}`} className="block w-full border border-slate-200 text-slate-700 font-bold py-4 rounded-xl mb-3">Recover a guest booking</Link>}
         <Link
           href="/design/1#events"
           className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all text-lg"
