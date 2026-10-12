@@ -7,6 +7,7 @@ type OfflineState = "saving" | "ready" | "unsupported" | "error";
 export default function TicketActions({ id, ticketKey, title }: { id: string; ticketKey: string; title: string }) {
   const [message, setMessage] = useState("");
   const [offline, setOffline] = useState<OfflineState>("unsupported");
+  const [walletBusy, setWalletBusy] = useState(false);
 
   async function offlineMessage(type: "CACHE_TICKET" | "DELETE_TICKET" | "HAS_TICKET") {
     if (!("serviceWorker" in navigator)) throw new Error("Offline tickets are unavailable in this browser.");
@@ -65,10 +66,26 @@ export default function TicketActions({ id, ticketKey, title }: { id: string; ti
     }
   }
 
+  async function addToWallet() {
+    setWalletBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/tickets/${id}/wallet?key=${encodeURIComponent(ticketKey)}&format=json`);
+      const payload = await response.json().catch(() => ({})) as { error?: string; shareUrl?: string };
+      if (!response.ok) throw new Error(payload.error || "Wallet pass creation is temporarily unavailable.");
+      if (payload.shareUrl) window.location.assign(payload.shareUrl);
+      else setMessage("Your wallet pass is ready. Check your wallet app.");
+    } catch (cause) {
+      setMessage((cause as Error).message || "Wallet passes are temporarily unavailable. Your ticket is still valid.");
+    } finally {
+      setWalletBusy(false);
+    }
+  }
+
   return <>
     <div className="ticket-actions">
       <a className="button secondary" href={`/api/tickets/${id}/download?key=${ticketKey}`}><Download size={16} />Save</a>
-      <a className="button secondary" href={`/api/tickets/${id}/wallet?key=${ticketKey}`}><CheckCircle2 size={16} />Add to Wallet</a>
+      <button type="button" className="button secondary" onClick={addToWallet} disabled={walletBusy}><CheckCircle2 size={16} />{walletBusy ? "Preparing…" : "Add to Wallet"}</button>
       <button type="button" className="button secondary" onClick={() => window.print()}><Printer size={16} />PDF / Print</button>
       <button type="button" className="button secondary" onClick={share}><Share2 size={16} />Share</button>
       {offline !== "unsupported" && (offline === "ready"

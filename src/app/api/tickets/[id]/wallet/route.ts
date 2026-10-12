@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const wantsJson = new URL(req.url).searchParams.get("format") === "json";
   if (!walletWalletEnabled()) return NextResponse.json({ error: "Wallet passes are not configured yet." }, { status: 503 });
   const { id } = await params;
   const key = new URL(req.url).searchParams.get("key") || "";
@@ -13,7 +14,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!ticket) return NextResponse.json({ error: "Ticket not found." }, { status: 404 });
   const db = supabaseAdmin();
   const existing = await db.from("website_tickets").select("walletwallet_share_url").eq("id", ticket.id).maybeSingle();
-  if (existing.data?.walletwallet_share_url) return NextResponse.redirect(existing.data.walletwallet_share_url);
+  if (existing.data?.walletwallet_share_url) {
+    return wantsJson ? NextResponse.json({ ok: true, shareUrl: existing.data.walletwallet_share_url }) : NextResponse.redirect(existing.data.walletwallet_share_url);
+  }
   try {
     const event = await db.from("website_events").select("payload").eq("id", ticket.event_id).maybeSingle();
     const imagePath = typeof event.data?.payload?.img === "string" ? event.data.payload.img : "";
@@ -22,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const pass = await createWalletWalletPass(ticket, eventImage);
     const { error } = await db.from("website_tickets").update({ walletwallet_serial: pass.serialNumber, walletwallet_share_url: pass.shareUrl, walletwallet_google_url: pass.googleSaveUrl, walletwallet_created_at: new Date().toISOString() }).eq("id", ticket.id).eq("secret", ticket.secret);
     if (error) throw error;
-    return NextResponse.redirect(pass.shareUrl);
+    return wantsJson ? NextResponse.json({ ok: true, shareUrl: pass.shareUrl, googleSaveUrl: pass.googleSaveUrl }) : NextResponse.redirect(pass.shareUrl);
   } catch (cause) {
     console.error("[walletwallet] pass creation failed", (cause as Error).message);
     return NextResponse.json({ error: "Wallet pass creation is temporarily unavailable. Your ticket is still valid." }, { status: 502 });
