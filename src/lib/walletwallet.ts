@@ -48,11 +48,19 @@ export async function createWalletWalletPass(ticket: Admission, eventImage?: str
     ],
     colorPreset: "blue", logoURL: absoluteAsset("/brand/easy-tickets-logo.png"), backgroundURL: eventImage || undefined, expirationDate: expiry(ticket), sharingProhibited: true,
   };
-  const response = await fetch(API_URL, {
+  const requestPayload = (body: Record<string, unknown>) => fetch(API_URL, {
     method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify(Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined))), cache: "no-store",
+    body: JSON.stringify(Object.fromEntries(Object.entries(body).filter(([, value]) => value !== undefined))), cache: "no-store",
   });
-  const result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  let response = await requestPayload(payload);
+  let result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  // Image fields are optional Pro features. If a free/trial account rejects them,
+  // retry once without the optional image fields so the customer still gets a pass.
+  if (response.status === 400 && (payload.logoURL || payload.backgroundURL)) {
+    const { logoURL: _logo, backgroundURL: _background, ...basicPayload } = payload;
+    response = await requestPayload(basicPayload);
+    result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  }
   if (!response.ok) throw new WalletWalletError(response.status, response.status === 401 ? "WalletWallet rejected the API key." : response.status === 429 ? "Wallet pass limit reached for this month." : "WalletWallet rejected the pass details.", result?.error || result?.message);
   if (!result?.serialNumber || !result.shareUrl || !result.googleSaveUrl) throw new WalletWalletError(502, "WalletWallet returned an incomplete pass.");
   return { serialNumber: result.serialNumber, shareUrl: result.shareUrl, googleSaveUrl: result.googleSaveUrl, applePass: result.applePass };
