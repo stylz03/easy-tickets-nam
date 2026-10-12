@@ -4,6 +4,16 @@ import { ticketCredential } from "@/lib/tickets";
 const API_URL = "https://api.walletwallet.dev/api/passes";
 
 export type WalletWalletPass = { serialNumber: string; googleSaveUrl: string; shareUrl: string; applePass?: string };
+export class WalletWalletError extends Error {
+  status: number;
+  providerMessage?: string;
+  constructor(status: number, message: string, providerMessage?: string) {
+    super(message);
+    this.name = "WalletWalletError";
+    this.status = status;
+    this.providerMessage = providerMessage;
+  }
+}
 
 export function walletWalletEnabled() {
   return process.env.EASY_TICKETS_WALLETS_ENABLED === "true" && Boolean(process.env.WALLETWALLET_API_KEY);
@@ -25,7 +35,7 @@ function expiry(ticket: Admission) {
 }
 
 export async function createWalletWalletPass(ticket: Admission, eventImage?: string): Promise<WalletWalletPass> {
-  const apiKey = process.env.WALLETWALLET_API_KEY;
+  const apiKey = process.env.WALLETWALLET_API_KEY?.trim();
   if (!apiKey) throw new Error("WalletWallet is not configured.");
   const payload = {
     barcodeValue: ticketCredential(ticket), barcodeFormat: "QR", barcodeAltText: `ET · ${ticket.id.slice(0, 8).toUpperCase()}`,
@@ -42,7 +52,8 @@ export async function createWalletWalletPass(ticket: Admission, eventImage?: str
     method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined))), cache: "no-store",
   });
-  const result = await response.json().catch(() => null) as Partial<WalletWalletPass> | null;
-  if (!response.ok || !result?.serialNumber || !result.shareUrl || !result.googleSaveUrl) throw new Error(response.status === 429 ? "Wallet pass limit reached for this month." : "Wallet pass could not be created.");
+  const result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  if (!response.ok) throw new WalletWalletError(response.status, response.status === 401 ? "WalletWallet rejected the API key." : response.status === 429 ? "Wallet pass limit reached for this month." : "WalletWallet rejected the pass details.", result?.error || result?.message);
+  if (!result?.serialNumber || !result.shareUrl || !result.googleSaveUrl) throw new WalletWalletError(502, "WalletWallet returned an incomplete pass.");
   return { serialNumber: result.serialNumber, shareUrl: result.shareUrl, googleSaveUrl: result.googleSaveUrl, applePass: result.applePass };
 }

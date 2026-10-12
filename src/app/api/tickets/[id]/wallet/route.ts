@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ticketByKey } from "@/lib/tickets";
-import { createWalletWalletPass, walletWalletEnabled } from "@/lib/walletwallet";
+import { createWalletWalletPass, WalletWalletError, walletWalletEnabled } from "@/lib/walletwallet";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (error) throw error;
     return wantsJson ? NextResponse.json({ ok: true, shareUrl: pass.shareUrl, googleSaveUrl: pass.googleSaveUrl }) : NextResponse.redirect(pass.shareUrl);
   } catch (cause) {
-    console.error("[walletwallet] pass creation failed", (cause as Error).message);
-    return NextResponse.json({ error: "Wallet pass creation is temporarily unavailable. Your ticket is still valid." }, { status: 502 });
+    const error = cause as Partial<WalletWalletError>;
+    console.error("[walletwallet] pass creation failed", { message: error.message, status: error.status, providerMessage: error.providerMessage });
+    const status = typeof error.status === "number" && error.status >= 400 && error.status < 500 ? error.status : 502;
+    const message = error.status === 401
+      ? "Wallet provider rejected the API key. Please ask the organiser to check the WalletWallet Production key."
+      : error.status === 400
+        ? "Wallet provider rejected these pass details. Your ticket is still valid."
+        : "Wallet passes are temporarily unavailable. Your ticket is still valid.";
+    return NextResponse.json({ error: message }, { status });
   }
 }
