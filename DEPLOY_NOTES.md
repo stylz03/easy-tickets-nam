@@ -66,7 +66,7 @@ No standalone PostgreSQL server/Docker or running Supabase stack was used for th
 Run: node --test tests/platform.test.mjs tests/migrations-seed.test.mjs
 
 ## Seed contents
-Six events (IDs 1-6), all display fields, artwork paths, times, descriptions, tier names/perks and prices copied from src/data/events.ts:
+Nine events (IDs 1-9), all display fields, artwork paths, times, descriptions, tier names/perks and prices copied from src/data/events.ts:
 | Event | Displayed date | Standard / Premium / VIP (NAD) |
 | --- | --- | --- |
 | Windhoek Cultural Festival | October 17, 2026 | 150 / 350 / 600 |
@@ -75,12 +75,15 @@ Six events (IDs 1-6), all display fields, artwork paths, times, descriptions, ti
 | Etosha Trail Marathon | January 17, 2027 | 200 / 350 / 600 |
 | Coastal Jazz Weekend | February 13-14, 2027 | 180 / 350 / 600 |
 | Windhoek Comedy Night | February 26, 2027 | 120 / 350 / 600 |
+| Namib Moonlight Cinema | March 20, 2027 | 160 / 320 / 520 |
+| Oshakati Makers Market | April 10, 2027 | 80 / 220 / 450 |
+| Skeleton Coast Adventure Weekend | May 15-16, 2027 | 300 / 650 / 1100 |
 
 Start timestamps are Namibia time (+02:00). Overnight and multi-day display text is preserved; no new end timestamps have been guessed because the original catalogue does not define endsAt.
 The seed creates a single Easy Tickets Namibia organisation, deterministic UUID e4510000-0000-4000-8000-000000000001, and publishes these events. It creates no users, passwords, staff or manager grants. It uses conflict DO NOTHING to avoid overwriting existing rows and keeps organiser-created IDs in the 1000+ range.
 
 IMPORTANT: the public preview supplies no ticket capacities. Seed capacities are explicitly zero so no invented stock can be sold. A trusted organiser must set actual capacities and event end times before sales. The displayed content is the current site's example catalogue, not independently verified event scheduling.
-The seed test compares every original display field and all 18 tier prices against source, checks bucket settings, catalogue availability and repeated-seed safety.
+The seed test compares every display field and all 27 tier prices against source, checks bucket settings, catalogue availability and repeated-seed safety.
 
 ## Organiser/account provisioning
 Use Supabase Auth to create and confirm real customer, organiser and staff accounts.
@@ -92,7 +95,7 @@ Do not grant end users service_role or direct access to order/ticket secrets.
 Bucket: website-event-images, public, 8 MiB limit (8388608 bytes); PNG, JPEG and WebP.
 The upload API verifies the manager's organisation, file size and binary image signature, then uploads using the server service-role key to organisation-UUID/random-UUID.ext.
 There are no direct client upload/delete policies on storage.objects. Public bucket downloads serve event artwork; server service-role uploads bypass object RLS. No private ticket or buyer data belongs in this public bucket.
-The current repository seed references public/images/namibia; it does not require uploads or extra buckets. These are credited Namibian location photographs for example events, not photographs of those events. The existing Easy Tickets database has older /images/design1 artwork on its six demonstration events; those rows were unpublished on 2026-10-07 and should not be reseeded or treated as saleable inventory. No wallet-pass bucket or email provider integration exists yet.
+The current repository seed references credited location photographs under public/images/namibia and three generated promotional artworks under public/images/events; it does not require uploads or extra buckets. The imagery is illustrative and is disclosed on the photo credits page. The existing Easy Tickets database has older /images/design1 artwork on its six demonstration events; those rows were unpublished on 2026-10-07 and should not be reseeded or treated as saleable inventory. No wallet-pass bucket exists yet; Resend ticket delivery and reminders are implemented but inactive until their deployment settings and scheduler are configured.
 
 ## Supabase Auth settings
 Enable Email/password signup and sign-in. This app does not expose Google, Apple or other social/OAuth sign-in flows; those providers are not required.
@@ -133,6 +136,6 @@ Do not activate a scheduler while preview mode is true. The admin client deliber
 ## Known scope
 The app includes an installable manifest, branded app icons, a mobile navigation dock and a service worker that caches only public static assets. It deliberately does not cache HTML, checkout responses, account data or QR-ticket pages. The service worker displays same-origin reminder push payloads after VAPID setup and explicit device subscription.
 
-Apple Wallet and Google Wallet passes are not active. Apple requires an Apple Developer Pass Type ID, signing certificate/private key and WWDR certificate. Google requires an approved Wallet issuer account, service-account credentials and an event-ticket class. Add those credentials as server-only deployment secrets, generate one signed pass/object per issued ticket, and show wallet actions only after the relevant provider returns a valid pass. The existing QR page, download, print/PDF and share actions remain the working ticket options.
+WalletWallet integration is now prepared for Apple Wallet and Google Wallet. Add `WALLETWALLET_API_KEY` and `EASY_TICKETS_WALLETS_ENABLED=true` as server-only Vercel variables, apply `20261012130000_walletwallet.sql`, and test the device-aware hosted install link. Each pass uses the existing ticket QR credential and event artwork as its background; the stored WalletWallet serial supports future updates. The existing QR page, download, print/PDF, offline save and share actions remain available.
 
 Ticket-delivery email and email/push reminders are implemented but inactive pending migration, credentials, scheduler and device testing. Controlled ticket transfers, refunds/payouts and numbered seat maps remain unfinished.

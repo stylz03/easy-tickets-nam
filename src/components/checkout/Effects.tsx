@@ -43,7 +43,7 @@ export function Confetti() {
           }}
           transition={{ duration: p.duration, delay: p.delay, ease: "easeIn" }}
           className="absolute rounded-sm"
-          style={{ left: `${p.x}%`, top: 0, width: p.size, height: p.size * p.ratio, backgroundColor: p.color }}
+          style={{ left: `${p.x}%`, top: 0, width: p.size, height: p.size * p.ratio, backgroundColor: p.color } as never}
         />
       ))}
     </div>

@@ -14,7 +14,7 @@ test('all ordered migrations and seed apply to a fresh database with Supabase pl
   await db.exec(seed); await db.exec(seed);
   const expected=await siteEvents();
   const actual=await db.query('select id,payload,starts_at from website_events order by id');
-  assert.equal(actual.rows.length,6);
+  assert.equal(actual.rows.length,expected.length);
   for(let i=0;i<expected.length;i++) {
    const seeded=structuredClone(actual.rows[i].payload);
    assert.equal(seeded.tiers.length,3);

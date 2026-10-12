@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity -- Experimental design preview intentionally randomises decorative effects. */
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
@@ -218,7 +219,7 @@ function GoldenParticle({ index }: { index: number }) {
         background: `hsl(${35 + Math.random() * 25}, 90%, ${55 + Math.random() * 20}%)`,
         left: "50%",
         top: "50%",
-      }}
+      } as never}
       initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
       animate={{
         x,
@@ -422,7 +423,7 @@ export default function Design3() {
 
         {/* Hero Content */}
         <motion.div
-          style={{ opacity: heroOpacity }}
+          style={{ opacity: heroOpacity } as never}
           className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-20 pt-16"
         >
           <motion.div

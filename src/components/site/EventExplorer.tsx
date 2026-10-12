@@ -12,6 +12,7 @@ const CITY_CENTRES: Record<string, Point> = {
   "walvis bay": { latitude: -22.9576, longitude: 14.5053 },
   etosha: { latitude: -18.8556, longitude: 16.3293 },
   oshakati: { latitude: -17.7883, longitude: 15.7044 },
+  sesriem: { latitude: -24.4867, longitude: 15.7994 },
   rundu: { latitude: -17.9253, longitude: 19.7534 },
   keetmanshoop: { latitude: -26.5833, longitude: 18.1333 },
 };
@@ -88,7 +89,7 @@ export default function EventExplorer({ events, initialQuery = "", initialCatego
       <label className="filter-search"><Search size={18} /><input aria-label="Filter events" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search events or venues" type="search" /></label>
       <label className="sr-only" htmlFor="event-category">Category</label>
       <select id="event-category" value={category} onChange={(event) => setCategory(event.target.value)}><option value="">All categories</option>{categories.map((item) => <option key={item}>{item}</option>)}</select>
-      <select aria-label="Filter by city" value={city} onChange={(event) => { setCity(event.target.value); setNearby(false); }}><option value="">All locations</option>{["Windhoek", "Swakopmund", "Walvis Bay", "Etosha"].map((item) => <option key={item}>{item}</option>)}</select>
+      <select aria-label="Filter by city" value={city} onChange={(event) => { setCity(event.target.value); setNearby(false); }}><option value="">All locations</option>{["Windhoek", "Swakopmund", "Walvis Bay", "Etosha", "Oshakati", "Sesriem"].map((item) => <option key={item}>{item}</option>)}</select>
       <select aria-label="Date range" value={date} onChange={(event) => setDate(event.target.value)}><option value="">All dates</option><option value="month">Next 30 days</option></select>
       <button type="button" className={`nearby-button ${nearby ? "active" : ""}`} onClick={findNearby} disabled={locating} aria-pressed={nearby}><MapPin size={16} />{locating ? "Finding you…" : nearby ? "Near me · on" : "Near me"}</button>
     </div>

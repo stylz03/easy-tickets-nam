@@ -68,7 +68,7 @@ function tiersFor(standardPrice: number): TicketTier[] {
   ];
 }
 
-type BaseEvent = Omit<EventItem, "tiers">;
+type BaseEvent = Omit<EventItem, "tiers"> & { tiers?: TicketTier[] };
 
 const baseEvents: BaseEvent[] = [
   {
@@ -155,11 +155,68 @@ const baseEvents: BaseEvent[] = [
     description:
       "Namibian comedians share the National Theatre stage with two visiting headliners. Doors open at 19:00; bar and food service are available.",
   },
+  {
+    id: 7,
+    title: "Namib Moonlight Cinema",
+    date: "MAR 20",
+    fullDate: "March 20, 2027",
+    startsAt: "2027/03/20 17:30",
+    price: 160,
+    img: "/images/events/namib-moonlight-cinema.webp",
+    location: "Sossusvlei Desert Lodge, Sesriem",
+    time: "17:30 – 23:00",
+    category: "Entertainment",
+    description:
+      "A one-night open-air cinema experience beneath the Namib sky, with a sunset welcome, locally made picnic boxes and a curated Namibian feature film. Seating and return transfers from Sesriem are included.",
+    tiers: [
+      { id: "standard", name: "Cinema seat", price: 160, perks: ["Reserved canvas chair", "Sesriem return transfer"] },
+      { id: "premium", name: "Picnic lounge", price: 320, perks: ["Low lounge seating", "Namibian picnic box", "Return transfer"] },
+      { id: "vip", name: "Stargazer", price: 520, perks: ["Front lounge pod", "Premium picnic box", "Welcome drink", "Return transfer"] },
+    ],
+  },
+  {
+    id: 8,
+    title: "Oshakati Makers Market",
+    date: "APR 10",
+    fullDate: "April 10, 2027",
+    startsAt: "2027/04/10 10:00",
+    price: 80,
+    img: "/images/events/oshakati-makers-market.webp",
+    location: "Oshakati Independence Stadium Grounds, Oshakati",
+    time: "10:00 – 19:00",
+    category: "Culture",
+    description:
+      "Discover contemporary Namibian craft, fashion, ceramics and food from northern makers. Your ticket includes the live design talks, acoustic stage and family creative workshops.",
+    tiers: [
+      { id: "standard", name: "Market day pass", price: 80, perks: ["All-day market entry", "Live stage access"] },
+      { id: "premium", name: "Workshop pass", price: 220, perks: ["Market entry", "One maker workshop", "Materials included"] },
+      { id: "vip", name: "Patron pass", price: 450, perks: ["Early entry", "Two maker workshops", "Curated gift bag"] },
+    ],
+  },
+  {
+    id: 9,
+    title: "Skeleton Coast Adventure Weekend",
+    date: "MAY 15",
+    fullDate: "May 15–16, 2027",
+    startsAt: "2027/05/15 07:00",
+    price: 300,
+    img: "/images/events/skeleton-coast-adventure.webp",
+    location: "Mile 4 Beach, Swakopmund",
+    time: "07:00 – 20:00",
+    category: "Sport",
+    description:
+      "A coastal weekend of guided trail runs, fat-bike routes and sunset music where the dunes meet the Atlantic. Entry includes route support, timing, the festival village and a finisher meal.",
+    tiers: [
+      { id: "standard", name: "Festival pass", price: 300, perks: ["Festival village entry", "Sunset music programme"] },
+      { id: "premium", name: "Single-discipline entry", price: 650, perks: ["One timed route", "Route support", "Finisher meal"] },
+      { id: "vip", name: "Weekend athlete", price: 1100, perks: ["Run and ride entry", "Priority registration", "Two finisher meals"] },
+    ],
+  },
 ];
 
 export const events: EventItem[] = baseEvents.map((e) => ({
   ...e,
-  tiers: tiersFor(e.price),
+  tiers: e.tiers ?? tiersFor(e.price),
 }));
 
 export function getEvent(id: number): EventItem | undefined {

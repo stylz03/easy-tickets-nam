@@ -5,7 +5,7 @@ const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
 export async function POST(req:Request){
  if(!sameOrigin(req))return json({error:"Invalid request."},403);
  try{const identity=await organiserIdentity();if(!identity)return json({error:"Please sign in."},401);
- const b=await req.json().catch(()=>null);if(!b||!identity.members.some(m=>m.organisation_id===b.organisationId))return json({error:"You do not manage that organisation."},403);
+ const b=await req.json().catch(()=>null);if(!b||!identity.members.some((m:{organisation_id:string})=>m.organisation_id===b.organisationId))return json({error:"You do not manage that organisation."},403);
  const title=text(b.title,120),venue=text(b.venue,160),city=text(b.city,60),description=text(b.description,5000),image=text(b.image,1000);
  const start=typeof b.start==="string"?b.start:"";const end=typeof b.end==="string"?b.end:"";
  if(title.length<3||venue.length<3||!city||description.length<20||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(end)||Date.parse(start+":00+02:00")<=Date.now()||Date.parse(end+":00+02:00")<=Date.parse(start+":00+02:00"))return json({error:"Check your event details and future start/end times."},400);

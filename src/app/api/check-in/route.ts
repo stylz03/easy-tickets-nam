@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { accountIdentity, json, sameOrigin } from "@/lib/account-api";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { uuid } from "@/lib/tickets";
+import { parseTicketCredential } from "@/lib/ticket-credential";
 
 async function checkInIdentity(req: Request) {
   const match = /^Bearer ([A-Za-z0-9._-]+)$/.exec(req.headers.get("authorization") ?? "");
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   const { data, error } = await identity.client.from("website_event_staff")
     .select("event_id").eq("user_id", identity.user.id);
   if (error) return json({ error: "Check-in services are unavailable." }, 503);
-  const ids = (data ?? []).map((row) => row.event_id);
+  const ids = (data ?? []).map((row: { event_id: number }) => row.event_id);
   if (!ids.length) return json({ events: [] });
 
   // Assignment is scoped by RLS above. Resolve titles server-side so a checker
@@ -41,13 +41,18 @@ export async function POST(req: Request) {
   const identity = await checkInIdentity(req);
   if (!identity) return json({ error: "Please sign in again to check tickets." }, 401);
   const body = await req.json().catch(() => null);
-  const parts = typeof body?.credential === "string" ? body.credential.split(".") : [];
-  if (parts.length !== 3 || parts[0] !== "ET1" || !uuid.test(parts[1]) || !/^[a-f0-9]{64}$/.test(parts[2]) || !Number.isSafeInteger(body.eventId)) {
+  const ticket = parseTicketCredential(body?.credential);
+  if (!ticket || !Number.isSafeInteger(body?.eventId) || body.eventId <= 0) {
     return json({ error: "This is not a valid Easy Tickets QR code." }, 400);
   }
   const { data, error } = await identity.client.rpc("check_in_website_ticket", {
-    p_ticket_id: parts[1], p_secret: parts[2], p_event_id: body.eventId,
+    p_ticket_id: ticket.id, p_secret: ticket.secret, p_event_id: body.eventId,
   });
-  if (error) return json({ error: "You are not authorised for this event, or check-in is unavailable." }, 403);
+  if (error?.message.includes("Staff assignment required")) return json({ error: "Your account is not assigned to this event. Refresh assignments or ask the event manager." }, 403);
+  if (error) {
+    console.error("[check-in] ticket check failed", error.message);
+    return json({ error: "Check-in is temporarily unavailable. No admission was recorded; try again." }, 503);
+  }
+  if (!data?.ok) return json(data ?? { error: "Ticket not valid for this event." }, data?.error?.includes("already been used") ? 409 : 422);
   return json(data);
 }

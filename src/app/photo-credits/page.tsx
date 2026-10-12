@@ -12,6 +12,12 @@ const photos = [
   { place: "Etosha landscape", author: "Sonse", source: "https://commons.wikimedia.org/wiki/File:Scenery_(37712436922).jpg", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/" },
 ];
 
+const generatedArtwork = [
+  "Namib Moonlight Cinema",
+  "Oshakati Makers Market",
+  "Skeleton Coast Adventure Weekend",
+];
+
 export default function PhotoCreditsPage() {
-  return <PageFrame><main id="main" className="wrap page-content photo-credits-page"><p className="eyebrow">SITE PHOTOGRAPHY</p><h1>Made of real places.</h1><p className="page-lead">These photographs show Namibian locations. They do not document the example events shown in the preview catalogue. Images are cropped and colour-overlaid by the responsive layout.</p><ul>{photos.map((photo) => <li key={photo.place}><strong>{photo.place}</strong><span>Photograph by {photo.author}</span><div><a href={photo.source} target="_blank" rel="noopener noreferrer">Original photograph ↗</a><a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer">{photo.license} ↗</a></div></li>)}</ul><Link href="/events" className="text-link">Explore events →</Link></main></PageFrame>;
+  return <PageFrame><main id="main" className="wrap page-content photo-credits-page"><p className="eyebrow">SITE IMAGERY</p><h1>Namibia, pictured.</h1><p className="page-lead">Location photographs and generated event artwork set the scene for the preview catalogue. They do not document events that have already taken place. Images are cropped and colour-overlaid by the responsive layout.</p><h2>Location photography</h2><ul>{photos.map((photo) => <li key={photo.place}><strong>{photo.place}</strong><span>Photograph by {photo.author}</span><div><a href={photo.source} target="_blank" rel="noopener noreferrer">Original photograph ↗</a><a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer">{photo.license} ↗</a></div></li>)}</ul><h2>Generated event artwork</h2><p>The following promotional concepts use AI-generated artwork created for Easy Tickets. They are illustrative scenes, not documentary photographs.</p><ul>{generatedArtwork.map((event) => <li key={event}><strong>{event}</strong><span>Original generated promotional artwork</span></li>)}</ul><Link href="/events" className="text-link">Explore events →</Link></main></PageFrame>;
 }

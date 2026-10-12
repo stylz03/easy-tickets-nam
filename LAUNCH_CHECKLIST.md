@@ -27,12 +27,13 @@ Browser visual and camera testing was blocked by automatic approval review reach
 2. Fill the publishable key and server-only service-role key in the ignored .env.local. The supplied Easy Tickets URL is already present. Never put service-role, DPO, signing or cron secrets in NEXT_PUBLIC variables.
 3. Create the first organisation and owner membership through trusted administration. Users cannot grant themselves organiser access. Managers can assign confirmed staff accounts to their events.
 4. Configure Supabase confirmation/reset URLs for the chosen public domain and /auth/callback. Verify customer and organiser account flows.
-5. Replace all example events/artwork with real content. Preview mode disables payment when the live database is not configured.
+5. Confirm the dates, venues, organisers, prices and capacities for all example events before publishing them. Three additional event concepts and generated artwork are included for catalogue testing; preview mode disables payment when the live database is not configured.
 6. Use the provided DPO test settings first. Configure the public return URL; run a complete sandbox purchase, pending/cancelled/expired payment and duplicate-return checks before switching to production credentials.
 7. Set a strong CRON_SECRET and schedule authenticated GET /api/jobs/reconcile every few minutes. This endpoint is prepared but no schedule is deployed. Monitor errors/review counts, and manually investigate amount mismatches rather than releasing reserved stock.
-8. Configure a transactional email provider and confirmed sender for automatic ticket delivery. Email delivery is not implemented yet.
-9. Apple Wallet requires Pass Type ID signing credentials; Google Wallet requires issuer credentials and publishing access. Actual wallet pass generation remains to be implemented once these are available.
-10. Test physical camera scanning, mobile layout, accessibility, poor network handling, real payment returns and event-day operations before public launch.
+8. Configure Resend, verify the sending domain, set the notification activation timestamp and schedule the authenticated notification job. Ticket delivery and reminders are implemented but remain inactive until these settings are supplied and tested.
+9. Add the server-only WalletWallet API key, set `EASY_TICKETS_WALLETS_ENABLED=true`, run the WalletWallet migration, and test the event-image background plus Add to Apple/Google Wallet flow on real devices. Never expose the key through a `NEXT_PUBLIC_` variable.
+10. Run a physical two-phone gate test over HTTPS: purchase a ticket, open its QR on one phone, assign a staff account, admit it on another phone, then confirm a second scan is rejected. Also test mobile layout, accessibility, poor network handling, real payment returns and event-day operations before public launch.
+11. Supply and publish the final support contact, privacy notice, purchase terms, cancellation/refund policy and organiser agreement. The site deliberately does not invent these business and legal details.
 
 ## Explicit limits
 

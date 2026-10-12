@@ -133,6 +133,7 @@ export async function sendEventReminders(): Promise<{ sent: number; errors: numb
 }
 
 type PushSubscriptionRow = { endpoint: string; user_id: string; p256dh: string; auth_secret: string };
+type UserIdRow = { user_id: string | null };
 export async function sendPushReminders(): Promise<{ sent: number; errors: number }> {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -155,12 +156,12 @@ export async function sendPushReminders(): Promise<{ sent: number; errors: numbe
       db.from("website_saved_events").select("user_id").eq("event_id", event.id).limit(1000),
     ]);
     if (buyersResult.error || savedResult.error) { errors++; continue; }
-    const ids = [...new Set([...(buyersResult.data ?? []).map((row) => row.user_id), ...(savedResult.data ?? []).map((row) => row.user_id)].filter((id): id is string => !!id))];
+    const ids = [...new Set([...(buyersResult.data ?? []).map((row: UserIdRow) => row.user_id), ...(savedResult.data ?? []).map((row: UserIdRow) => row.user_id)].filter((id): id is string => !!id))];
     if (!ids.length) continue;
     const { data: prefs, error: prefError } = await db.from("website_notification_preferences")
       .select("user_id").in("user_id", ids).eq("push_reminders", true);
     if (prefError) { errors++; continue; }
-    const optedIn = (prefs ?? []).map((row) => row.user_id);
+    const optedIn = (prefs ?? []).map((row: { user_id: string }) => row.user_id);
     if (!optedIn.length) continue;
     const { data: subscriptions, error: subError } = await db.from("website_push_subscriptions")
       .select("endpoint,user_id,p256dh,auth_secret").in("user_id", optedIn).limit(1000);
