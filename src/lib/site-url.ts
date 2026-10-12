@@ -5,8 +5,9 @@ import "server-only";
  * Priority: NEXT_PUBLIC_SITE_URL / APP_BASE_URL env -> request host -> VERCEL_URL.
  */
 export function siteUrl(req?: Request): string {
-  const env = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_BASE_URL;
-  if (env) return env.replace(/\/+$/, "");
+  // Preserve the hostname the buyer actually used. This is important for
+  // staging aliases: a checkout started on staging must return to staging,
+  // not to the production URL stored in NEXT_PUBLIC_SITE_URL.
   if (req) {
     const h = req.headers;
     const host = h.get("x-forwarded-host") || h.get("host");
@@ -18,6 +19,8 @@ export function siteUrl(req?: Request): string {
     }
     return new URL(req.url).origin;
   }
+  const env = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_BASE_URL;
+  if (env) return env.replace(/\/+$/, "");
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
 }
