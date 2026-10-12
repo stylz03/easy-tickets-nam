@@ -70,13 +70,15 @@ export default function TicketActions({ id, ticketKey, title }: { id: string; ti
     setWalletBusy(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/tickets/${id}/wallet?key=${encodeURIComponent(ticketKey)}&format=json`);
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 20000);
+      const response = await fetch(`/api/tickets/${id}/wallet?key=${encodeURIComponent(ticketKey)}&format=json`, { signal: controller.signal }).finally(() => window.clearTimeout(timeout));
       const payload = await response.json().catch(() => ({})) as { error?: string; shareUrl?: string };
       if (!response.ok) throw new Error(payload.error || "Wallet pass creation is temporarily unavailable.");
       if (payload.shareUrl) window.location.assign(payload.shareUrl);
       else setMessage("Your wallet pass is ready. Check your wallet app.");
     } catch (cause) {
-      setMessage((cause as Error).message || "Wallet passes are temporarily unavailable. Your ticket is still valid.");
+      setMessage((cause as Error).name === "AbortError" ? "Wallet pass creation took too long. Your ticket is still valid—please try again." : (cause as Error).message || "Wallet passes are temporarily unavailable. Your ticket is still valid.");
     } finally {
       setWalletBusy(false);
     }

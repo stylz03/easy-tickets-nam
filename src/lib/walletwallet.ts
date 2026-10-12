@@ -49,12 +49,25 @@ export async function createWalletWalletPass(ticket: Admission, eventImage?: str
     ],
     colorPreset: "blue", logoURL: premiumImagesEnabled ? absoluteAsset("/brand/easy-tickets-logo.png") : undefined, backgroundURL: premiumImagesEnabled ? eventImage || undefined : undefined, expirationDate: expiry(ticket), sharingProhibited: true,
   };
-  const requestPayload = (body: Record<string, unknown>) => fetch(API_URL, {
-    method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify(Object.fromEntries(Object.entries(body).filter(([, value]) => value !== undefined))), cache: "no-store",
-  });
-  let response = await requestPayload(payload);
-  let result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  const requestPayload = (body: Record<string, unknown>) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    return fetch(API_URL, {
+      method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(Object.entries(body).filter(([, value]) => value !== undefined))), cache: "no-store", signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
+  };
+  let response: Response;
+  let result: (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  try {
+    response = await requestPayload(payload);
+    result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  } catch (cause) {
+    if (!payload.logoURL && !payload.backgroundURL) throw cause;
+    const { logoURL: _logo, backgroundURL: _background, ...basicPayload } = payload;
+    response = await requestPayload(basicPayload);
+    result = await response.json().catch(() => null) as (Partial<WalletWalletPass> & { error?: string; message?: string }) | null;
+  }
   // Image fields are optional Pro features. If a free/trial account rejects them,
   // retry once without the optional image fields so the customer still gets a pass.
   if (response.status === 400 && (payload.logoURL || payload.backgroundURL)) {
