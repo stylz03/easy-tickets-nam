@@ -37,6 +37,7 @@ function expiry(ticket: Admission) {
 export async function createWalletWalletPass(ticket: Admission, eventImage?: string): Promise<WalletWalletPass> {
   const apiKey = process.env.WALLETWALLET_API_KEY?.trim();
   if (!apiKey) throw new Error("WalletWallet is not configured.");
+  const premiumImagesEnabled = process.env.WALLETWALLET_PREMIUM_IMAGES === "true";
   const payload = {
     barcodeValue: ticketCredential(ticket), barcodeFormat: "QR", barcodeAltText: `ET · ${ticket.id.slice(0, 8).toUpperCase()}`,
     logoText: "Easy Tickets", organizationName: "Easy Tickets Namibia", description: `Entry ticket for ${ticket.event_name}`,
@@ -46,7 +47,7 @@ export async function createWalletWalletPass(ticket: Admission, eventImage?: str
       { label: "DATE", value: ticket.event_date ? new Date(ticket.event_date).toLocaleString("en-GB", { timeZone: "Africa/Windhoek", dateStyle: "full", timeStyle: "short" }) : "Date to be confirmed" },
       { label: "ENTRY", value: "One admission. Show this pass at the entrance." },
     ],
-    colorPreset: "blue", logoURL: absoluteAsset("/brand/easy-tickets-logo.png"), backgroundURL: eventImage || undefined, expirationDate: expiry(ticket), sharingProhibited: true,
+    colorPreset: "blue", logoURL: premiumImagesEnabled ? absoluteAsset("/brand/easy-tickets-logo.png") : undefined, backgroundURL: premiumImagesEnabled ? eventImage || undefined : undefined, expirationDate: expiry(ticket), sharingProhibited: true,
   };
   const requestPayload = (body: Record<string, unknown>) => fetch(API_URL, {
     method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
