@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const wantsJson = new URL(req.url).searchParams.get("format") === "json";
-  if (!walletWalletEnabled()) return NextResponse.json({ error: "Wallet passes are not configured yet." }, { status: 503 });
+  if (!walletWalletEnabled()) return NextResponse.json({ error: "Wallet passes are temporarily unavailable. Your ticket is still valid." }, { status: 503 });
   const { id } = await params;
   const key = new URL(req.url).searchParams.get("key") || "";
   const ticket = await ticketByKey(id, key);
