@@ -23,13 +23,13 @@ begin
   if not found then return null; end if;
 
   end_value:=e.payload->>'endsAt';
-  if end_value ~ '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$' then
+  if end_value ~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$' then
     return replace(end_value,'T',' ')::timestamp at time zone 'Africa/Windhoek';
-  elsif end_value ~ '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$' then
+  elsif end_value ~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$' then
     return end_value::timestamptz;
   end if;
 
-  time_range:=regexp_match(coalesce(e.payload->>'time',''),'([0-2]?[0-9]):([0-5][0-9])\\s*[–-]\\s*([0-2]?[0-9]):([0-5][0-9])');
+  time_range:=regexp_match(coalesce(e.payload->>'time',''),'([0-2]?[0-9]):([0-5][0-9])\s*[–-]\s*([0-2]?[0-9]):([0-5][0-9])');
   if time_range is null or time_range[3]::integer>23 then return null; end if;
 
   start_local:=e.starts_at at time zone 'Africa/Windhoek';
