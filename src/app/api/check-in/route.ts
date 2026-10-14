@@ -30,10 +30,16 @@ export async function GET(req: Request) {
 
   // Assignment is scoped by RLS above. Resolve titles server-side so a checker
   // also sees an event while the organiser is still preparing its catalogue page.
-  const events = await supabaseAdmin().from("website_events")
+  const admin = supabaseAdmin();
+  const events = await admin.from("website_events")
     .select("id,title").in("id", ids).order("starts_at");
   if (events.error) return json({ error: "Assigned events are unavailable." }, 503);
-  return json({ events: events.data ?? [] });
+  const activeEvents = await Promise.all((events.data ?? []).map(async (event: {id:number;title:string}) => {
+    const { data: endsAt, error: endError } = await admin.rpc("website_event_end_at", { p_event_id: event.id });
+    if (endError) throw endError;
+    return !endsAt || new Date(endsAt).getTime() > Date.now() ? event : null;
+  }));
+  return json({ events: activeEvents.filter((event): event is {id:number;title:string} => event !== null) });
 }
 
 export async function POST(req: Request) {

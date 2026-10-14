@@ -138,13 +138,14 @@ export default function CheckInPanel() {
   if (loading) return <p>Loading…</p>;
   if (!user) return <div className="empty-state">
     <h2>Staff access only</h2>
-    <p>{configured ? "Sign in with the account assigned to this event." : "Check-in services are awaiting the Easy Tickets connection."}</p>
+    <p>{configured ? "Sign in with the exact email the organizer assigned. A staff invitation link does not sign you in automatically." : "Check-in services are awaiting the Easy Tickets connection."}</p>
     <Link className="button primary" href="/auth/sign-in?next=/check-in">Sign in</Link>
   </div>;
 
   return <div className="auth-card">
     <h2>Event check-in</h2>
-    <p className="muted">Signed in as {user.email}. Your assigned event appears below.</p>
+    <p className="muted">Signed in as <strong>{user.email}</strong>. Check this is the staff account assigned by the organizer before admitting anyone. Your access is limited to the events listed below.</p>
+    <button type="button" className="button secondary" onClick={switchAccount}>Sign out and switch staff account</button>
     <form className="form-stack" onSubmit={admit}>
       <label>Event
         <select required value={eventId} disabled={loadingEvents || !events.length} onChange={(event) => {
