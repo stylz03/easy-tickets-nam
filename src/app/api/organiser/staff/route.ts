@@ -2,7 +2,7 @@ import { organiserIdentity, ownedEvent } from "@/lib/organiser-api";
 import { json, sameOrigin } from "@/lib/account-api";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-const EMAIL_RE = /^[^\\s@<>"']{1,64}@[^\\s@<>"']+\\.[^\\s@<>"']{2,}$/;
+const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']+\.[^\s@<>"']{2,}$/;
 
 export async function GET(req: Request) {
   try {
