@@ -27,7 +27,6 @@ export async function GET(req: Request) {
   if (error) return json({ error: "Check-in services are unavailable." }, 503);
   const ids = (data ?? []).map((row: { event_id: number }) => row.event_id);
   if (!ids.length) return json({ events: [] });
-  if (!ids.length) return json({ events: [] });
 
   // Assignment is scoped by RLS above. Resolve titles server-side so a checker
   // also sees an event while the organiser is still preparing its catalogue page.
