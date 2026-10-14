@@ -9,7 +9,7 @@ type ReceiptTicket = {
   link: string;
   holderName: string;
   tierName: string;
-  status: "valid" | "used" | "void";
+  status: "valid" | "used" | "void" | "expired";
 };
 
 export default function ReceiptTickets({
@@ -85,6 +85,7 @@ export default function ReceiptTickets({
               <>
                 <strong>{ticket.holderName}</strong>
                 <span>{ticket.tierName}</span>
+                {ticket.status !== "valid" && <span>{ticket.status === "expired" ? "Expired" : ticket.status === "used" ? "Already checked in" : "Ticket void"}</span>}
               </>
             )}
           </div>
