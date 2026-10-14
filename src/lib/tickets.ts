@@ -6,13 +6,13 @@ function eventExpired(eventDate:string|null,payload:Record<string,unknown>|null)
   if(!eventDate) return false;
   const rawEnd=typeof payload?.endsAt==="string" ? payload.endsAt : "";
   let endMs=Number.NaN;
-  if(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$/.test(rawEnd)) {
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(rawEnd)) {
     endMs=Date.parse(rawEnd+":00+02:00");
   } else if(rawEnd) {
     endMs=Date.parse(rawEnd);
   }
   if(!Number.isFinite(endMs)) {
-    const range=String(payload?.time ?? "").match(/(\\d{1,2}):(\\d{2})\\s*[–-]\\s*(\\d{1,2}):(\\d{2})/);
+    const range=String(payload?.time ?? "").match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);
     if(!range) return false;
     const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Windhoek",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(eventDate));
     const part=(type:string)=>Number(parts.find((item)=>item.type===type)?.value);
