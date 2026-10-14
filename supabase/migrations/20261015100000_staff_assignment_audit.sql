@@ -25,6 +25,16 @@ alter table public.website_event_staff_audit enable row level security;
 revoke all on public.website_event_staff_audit from anon, authenticated;
 grant all on public.website_event_staff_audit to service_role;
 
+insert into public.website_event_staff_audit(event_id,organisation_id,email,user_id,status,invited_at,expires_at)
+select s.event_id,e.organisation_id,u.email,s.user_id,'assigned',now(),public.website_event_end_at(s.event_id)
+from public.website_event_staff s
+join public.website_events e on e.id=s.event_id
+join auth.users u on u.id=s.user_id
+where not exists (
+ select 1 from public.website_event_staff_audit a
+ where a.event_id=s.event_id and a.user_id=s.user_id
+);
+
 create or replace function public.assign_website_event_staff(p_event_id integer,p_email text) returns void
 language plpgsql security definer set search_path='' as $$
 declare v_user uuid;
